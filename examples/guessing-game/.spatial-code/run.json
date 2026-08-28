@@ -1,0 +1,6 @@
+{
+  "name": "Play guessing game",
+  "command": "pnpm",
+  "args": ["start"],
+  "cwd": "."
+}

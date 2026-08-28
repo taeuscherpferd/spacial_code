@@ -1,0 +1,14 @@
+{
+  "name": "spatial-code",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "workspaces": ["apps/*", "examples/*"],
+  "scripts": {
+    "dev": "pnpm --filter @spatial-code/xr dev",
+    "server": "cargo run -p spatial-code-server -- examples/guessing-game",
+    "build": "pnpm --filter @spatial-code/xr build",
+    "test": "pnpm --filter @spatial-code/xr test",
+    "lint": "pnpm --filter @spatial-code/xr lint",
+    "format": "pnpm --filter @spatial-code/xr format"
+  }
+}

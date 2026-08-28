@@ -1,0 +1,13 @@
+[package]
+name = "spatial-code-typescript"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+spatial-code-core.workspace = true
+spatial-code-graph.workspace = true
+tree-sitter.workspace = true
+tree-sitter-typescript.workspace = true
+

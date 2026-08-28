@@ -1,0 +1,81 @@
+.tree {
+  position: absolute;
+  top: 5.25rem;
+  left: 1rem;
+  bottom: 1rem;
+  width: 14.5rem;
+  overflow: auto;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter: blur(18px);
+  scrollbar-width: thin;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.1rem 0.45rem 0.55rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.count {
+  color: var(--accent);
+}
+
+.list {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.entry {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.5rem;
+  border: 0;
+  border-radius: 0.45rem;
+  color: var(--text-soft);
+  background: transparent;
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.entry:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.selected {
+  color: #fff;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.icon {
+  width: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.children {
+  margin-left: 0.72rem;
+  padding-left: 0.25rem;
+  border-left: 1px solid var(--border);
+}
+
+.empty {
+  padding: 1rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+

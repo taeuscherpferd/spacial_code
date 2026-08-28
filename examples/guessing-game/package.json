@@ -1,0 +1,14 @@
+{
+  "name": "spatial-code-guessing-game",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc && node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.0",
+    "typescript": "~5.9.0"
+  }
+}

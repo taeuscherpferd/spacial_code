@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'examples/*'
+
+confirmModulesPurge: false
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true

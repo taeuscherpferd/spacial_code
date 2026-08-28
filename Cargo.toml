@@ -1,0 +1,40 @@
+[workspace]
+members = [
+    "crates/core",
+    "crates/graph",
+    "crates/languages/typescript",
+    "crates/processes",
+    "crates/server",
+    "crates/terminal",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[workspace.dependencies]
+anyhow = "1"
+async-trait = "0.1"
+axum = { version = "0.8", features = ["ws"] }
+clap = { version = "4", features = ["derive"] }
+futures-util = "0.3"
+ignore = "0.4"
+notify = "8"
+portable-pty = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+spatial-code-core = { path = "crates/core" }
+spatial-code-graph = { path = "crates/graph" }
+spatial-code-processes = { path = "crates/processes" }
+spatial-code-terminal = { path = "crates/terminal" }
+spatial-code-typescript = { path = "crates/languages/typescript" }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "fs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tree-sitter = "0.25"
+tree-sitter-typescript = "0.23"
+uuid = { version = "1", features = ["v4"] }
+

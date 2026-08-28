@@ -1,0 +1,8 @@
+/target/
+/node_modules/
+/apps/xr/dist/
+/apps/xr/coverage/
+/examples/*/dist/
+*.tsbuildinfo
+*.log
+.DS_Store
