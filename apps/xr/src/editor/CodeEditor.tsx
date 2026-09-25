@@ -38,7 +38,9 @@ export const CodeEditor = ({
   onChange,
   onSave,
 }: CodeEditorProps) => {
-  const [state, setState] = useState<EditorState>(() => CodeEditorLogic.create(''))
+  const [state, setState] = useState<EditorState>(() =>
+    CodeEditorLogic.create(''),
+  )
 
   useEffect(() => {
     setState(CodeEditorLogic.create(document?.content ?? '', focusLine))
@@ -68,7 +70,11 @@ export const CodeEditor = ({
       }
       if (modifier && event.key.toLowerCase() === 'z') {
         event.preventDefault()
-        apply(event.shiftKey ? CodeEditorLogic.redo(state) : CodeEditorLogic.undo(state))
+        apply(
+          event.shiftKey
+            ? CodeEditorLogic.redo(state)
+            : CodeEditorLogic.undo(state),
+        )
         return
       }
       if (modifier && event.key.toLowerCase() === 'y') {
@@ -135,7 +141,11 @@ export const CodeEditor = ({
       onWheel={(event) => {
         event.stopPropagation()
         setState((current) =>
-          CodeEditorLogic.scroll(current, event.deltaY > 0 ? 3 : -3, visibleLineCount),
+          CodeEditorLogic.scroll(
+            current,
+            event.deltaY > 0 ? 3 : -3,
+            visibleLineCount,
+          ),
         )
       }}
     >
@@ -153,7 +163,9 @@ export const CodeEditor = ({
         color="#f4f6ff"
         anchorX="left"
       >
-        {document ? `${document.path}${dirty ? ' •' : ''}` : 'Select a source node'}
+        {document
+          ? `${document.path}${dirty ? ' •' : ''}`
+          : 'Select a source node'}
       </Text>
       {lines.map((line, index) => (
         <EditorLine
@@ -162,7 +174,13 @@ export const CodeEditor = ({
           index={index}
           active={active}
           onCursor={(column, extend) =>
-            apply(CodeEditorLogic.setCursor(state, line.startOffset + column, extend))
+            apply(
+              CodeEditorLogic.setCursor(
+                state,
+                line.startOffset + column,
+                extend,
+              ),
+            )
           }
         />
       ))}
@@ -172,7 +190,9 @@ export const CodeEditor = ({
         color="#7984ad"
         anchorX="right"
       >
-        {active ? 'typing · Ctrl/Cmd+S saves · wheel scrolls' : 'select panel to edit'}
+        {active
+          ? 'typing · Ctrl/Cmd+S saves · wheel scrolls'
+          : 'select panel to edit'}
       </Text>
     </group>
   )
@@ -204,19 +224,28 @@ const EditorLine = ({ line, index, active, onCursor }: EditorLineProps) => {
         <planeGeometry args={[4.85, lineHeight]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
-      <Text position={[-2.34, 0, 0]} fontSize={0.085} color="#566086" anchorX="left">
+      <Text
+        position={[-2.34, 0, 0]}
+        fontSize={0.085}
+        color="#566086"
+        anchorX="left"
+      >
         {String(line.number).padStart(3, ' ')}
       </Text>
       {line.selectionStart !== null && line.selectionEnd !== null && (
         <mesh
           position={[
-            codeX + ((line.selectionStart + line.selectionEnd) * characterWidth) / 2,
+            codeX +
+              ((line.selectionStart + line.selectionEnd) * characterWidth) / 2,
             0,
             -0.002,
           ]}
         >
           <planeGeometry
-            args={[(line.selectionEnd - line.selectionStart) * characterWidth, 0.118]}
+            args={[
+              (line.selectionEnd - line.selectionStart) * characterWidth,
+              0.118,
+            ]}
           />
           <meshBasicMaterial color="#3c5fa8" transparent opacity={0.62} />
         </mesh>

@@ -51,7 +51,9 @@ export const WorkspaceTree = ({
           ))}
         </div>
       ) : (
-        <div className={styles.empty}>Waiting for the Rust workspace server…</div>
+        <div className={styles.empty}>
+          Waiting for the Rust workspace server…
+        </div>
       )}
     </aside>
   )
@@ -83,7 +85,9 @@ const WorkspaceEntryView = ({
           isDirectory ? onToggleDirectory(entry.path) : onOpenFile(entry.path)
         }
       >
-        <span className={styles.icon}>{isDirectory ? (isCollapsed ? '▸' : '▾') : '◇'}</span>
+        <span className={styles.icon}>
+          {isDirectory ? (isCollapsed ? '▸' : '▾') : '◇'}
+        </span>
         <span>{entry.name}</span>
       </button>
       {isDirectory && !isCollapsed && (
@@ -106,7 +110,7 @@ const WorkspaceEntryView = ({
 
 const countFiles = (entries: WorkspaceEntry[]): number =>
   entries.reduce(
-    (count, entry) => count + (entry.kind === 'file' ? 1 : countFiles(entry.children)),
+    (count, entry) =>
+      count + (entry.kind === 'file' ? 1 : countFiles(entry.children)),
     0,
   )
-

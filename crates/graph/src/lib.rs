@@ -7,7 +7,6 @@ pub enum GraphNodeKind {
     Function,
     Class,
     Import,
-    Export,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -20,6 +19,9 @@ pub struct GraphNode {
     pub start_line: usize,
     pub end_line: usize,
     pub detail: Option<String>,
+    /// Declared with `export` (directly or via `export { name }`).
+    #[serde(default)]
+    pub exported: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

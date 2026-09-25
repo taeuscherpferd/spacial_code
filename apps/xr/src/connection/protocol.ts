@@ -15,7 +15,7 @@ export interface WorkspaceSnapshot {
   entries: WorkspaceEntry[]
 }
 
-export type GraphNodeKind = 'file' | 'function' | 'class' | 'import' | 'export'
+export type GraphNodeKind = 'file' | 'function' | 'class' | 'import'
 
 export interface GraphNode {
   id: string
@@ -25,6 +25,7 @@ export interface GraphNode {
   startLine: number
   endLine: number
   detail: string | null
+  exported: boolean
 }
 
 export type GraphEdgeKind = 'contains' | 'imports' | 'calls'
@@ -69,7 +70,11 @@ export type ServerEvent =
       graph: ProgramGraph
       runConfigurations: RunConfiguration[]
     }
-  | { type: 'workspaceChanged'; workspace: WorkspaceSnapshot; graph: ProgramGraph }
+  | {
+      type: 'workspaceChanged'
+      workspace: WorkspaceSnapshot
+      graph: ProgramGraph
+    }
   | { type: 'sourceContent'; path: string; content: string; version: number }
   | { type: 'fileSaved'; path: string; version: number }
   | { type: 'terminalOutput'; data: string }

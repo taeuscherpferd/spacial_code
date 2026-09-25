@@ -31,7 +31,9 @@ const initialState: AppState = {
   error: null,
 }
 
-const processState = (event: Extract<ServerEvent, { type: 'processState' }>): ProcessState => {
+const processState = (
+  event: Extract<ServerEvent, { type: 'processState' }>,
+): ProcessState => {
   if (event.state === 'idle' || event.state === 'running') {
     return { status: event.state }
   }

@@ -60,7 +60,12 @@ export const WorkspaceScene = ({
     <fog attach="fog" args={['#070a12', 10, 24]} />
     <ambientLight intensity={0.8} />
     <directionalLight position={[3, 7, 8]} intensity={2.2} color="#adc5ff" />
-    <pointLight position={[-5, 2, 3]} intensity={12} color="#486dff" distance={9} />
+    <pointLight
+      position={[-5, 2, 3]}
+      intensity={12}
+      color="#486dff"
+      distance={9}
+    />
     <Grid
       position={[0, -3.12, -0.4]}
       args={[24, 16]}

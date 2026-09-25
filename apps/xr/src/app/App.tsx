@@ -15,9 +15,13 @@ export const App = () => {
   const dispatch = useAppDispatch()
   const app = useAppSelector((state) => state.app)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
-  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(new Set())
+  const [collapsedNodeIds, setCollapsedNodeIds] = useState<Set<string>>(
+    new Set(),
+  )
   const [focusHistory, setFocusHistory] = useState<string[]>([])
-  const [activePanel, setActivePanel] = useState<'editor' | 'terminal' | null>(null)
+  const [activePanel, setActivePanel] = useState<'editor' | 'terminal' | null>(
+    null,
+  )
   const [configuration, setConfiguration] = useState('')
 
   useEffect(() => {
@@ -37,17 +41,23 @@ export const App = () => {
     [app.graph.nodes, selectedNodeId],
   )
   const focusedNodeId = focusHistory.at(-1) ?? null
-  const dirty = app.source !== null && app.source.content !== app.source.savedContent
+  const dirty =
+    app.source !== null && app.source.content !== app.source.savedContent
   const running = app.process.status === 'running'
 
   const selectNode = (node: GraphNode): void => {
     setSelectedNodeId(node.id)
-    setActivePanel('editor')
-    webSocketClient.send({ type: 'openSource', path: node.path })
+    // External modules have no source file in the workspace.
+    if (node.kind !== 'import') {
+      setActivePanel('editor')
+      webSocketClient.send({ type: 'openSource', path: node.path })
+    }
   }
 
   const openFile = (path: string): void => {
-    const fileNode = app.graph.nodes.find((node) => node.kind === 'file' && node.path === path)
+    const fileNode = app.graph.nodes.find(
+      (node) => node.kind === 'file' && node.path === path,
+    )
     if (fileNode) {
       selectNode(fileNode)
     } else {
@@ -104,7 +114,10 @@ export const App = () => {
   const stop = (): void => webSocketClient.send({ type: 'stopRun' })
 
   return (
-    <main className={styles.app} onContextMenu={(event) => event.preventDefault()}>
+    <main
+      className={styles.app}
+      onContextMenu={(event) => event.preventDefault()}
+    >
       <div className={styles.canvas}>
         <Canvas camera={{ position: [0, 0.65, 10.5], fov: 52 }} dpr={[1, 1.6]}>
           <XR store={xrStore}>
@@ -222,14 +235,18 @@ export const App = () => {
 
       <div className={styles.selection}>
         <span>Selected</span>
-        <span className={styles.selectionName}>{selectedNode?.name ?? 'none'}</span>
+        <span className={styles.selectionName}>
+          {selectedNode?.name ?? 'none'}
+        </span>
         <button
           type="button"
           className={styles.button}
           disabled={!selectedNode}
           onClick={() => selectedNode && toggleCollapsed(selectedNode.id)}
         >
-          {selectedNode && collapsedNodeIds.has(selectedNode.id) ? 'Expand' : 'Collapse'}
+          {selectedNode && collapsedNodeIds.has(selectedNode.id)
+            ? 'Expand'
+            : 'Collapse'}
         </button>
         <button
           type="button"
@@ -250,13 +267,18 @@ export const App = () => {
       </div>
 
       <div className={styles.hint}>
-        drag nodes · double-click to focus · right-click to fold · orbit with the background
+        drag nodes · double-click to focus · right-click to fold · orbit with
+        the background
       </div>
 
       {app.error && (
         <div className={styles.error} role="alert">
           <span>{app.error}</span>
-          <button type="button" onClick={() => dispatch(errorDismissed())} aria-label="Dismiss error">
+          <button
+            type="button"
+            onClick={() => dispatch(errorDismissed())}
+            aria-label="Dismiss error"
+          >
             ✕
           </button>
         </div>

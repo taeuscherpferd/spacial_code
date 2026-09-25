@@ -37,6 +37,7 @@ struct ParseContext<'a> {
     edges: Vec<GraphEdge>,
     calls: Vec<PendingCall>,
     imports: Vec<ParsedImport>,
+    exported_names: HashSet<String>,
 }
 
 pub struct TypeScriptAdapter {
@@ -120,6 +121,7 @@ impl LanguageAdapter for TypeScriptAdapter {
                 start_line: 1,
                 end_line: file.content.lines().count().max(1),
                 detail: Some(file.relative_path.clone()),
+                exported: false,
             });
             let mut context = ParseContext {
                 path: &file.relative_path,
@@ -128,8 +130,16 @@ impl LanguageAdapter for TypeScriptAdapter {
                 edges: Vec::new(),
                 calls: Vec::new(),
                 imports: Vec::new(),
+                exported_names: HashSet::new(),
             };
             visit_node(tree.root_node(), &file_id, &mut context);
+            for node in &mut context.nodes {
+                if context.exported_names.contains(&node.name)
+                    && is_top_level(node, &context.edges, &file_id)
+                {
+                    node.exported = true;
+                }
+            }
             graph.nodes.extend(context.nodes);
             graph.edges.extend(context.edges);
             calls.extend(context.calls);
@@ -180,18 +190,9 @@ fn visit_node(node: Node<'_>, parent_id: &str, context: &mut ParseContext<'_>) {
         }
         "import_statement" => {
             if let Some(source_node) = node.child_by_field_name("source") {
+                // Nodes and edges for imports are created in `connect_imports`, once every
+                // file is known and the specifier can be resolved.
                 let specifier = strip_quotes(&node_text(source_node, context.source));
-                let name = format!("import {specifier}");
-                let id = symbol_node_id(context.path, "import", &specifier, node.start_byte());
-                add_symbol(
-                    context,
-                    node,
-                    parent_id,
-                    &id,
-                    GraphNodeKind::Import,
-                    name,
-                    Some(specifier.clone()),
-                );
                 context.imports.push(ParsedImport {
                     source_path: context.path.to_owned(),
                     specifier,
@@ -201,18 +202,10 @@ fn visit_node(node: Node<'_>, parent_id: &str, context: &mut ParseContext<'_>) {
             }
         }
         "export_statement" => {
-            let label = source_line(node, context.source);
-            let id = symbol_node_id(context.path, "export", &label, node.start_byte());
-            add_symbol(
-                context,
-                node,
-                parent_id,
-                &id,
-                GraphNodeKind::Export,
-                "export".to_owned(),
-                Some(label),
-            );
-            child_parent = id;
+            // `export { a, b }` names local symbols declared elsewhere in the file.
+            if node.child_by_field_name("source").is_none() {
+                collect_export_specifiers(node, context);
+            }
         }
         "call_expression" => {
             if let Some(function) = node.child_by_field_name("function") {
@@ -251,6 +244,9 @@ fn add_symbol(
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
         detail,
+        exported: node
+            .parent()
+            .is_some_and(|parent| parent.kind() == "export_statement"),
     });
     context.edges.push(GraphEdge {
         id: edge_id(GraphEdgeKind::Contains, parent_id, id),
@@ -260,24 +256,43 @@ fn add_symbol(
     });
 }
 
+/// Project-file imports become file -> file edges. Anything else (packages, node builtins)
+/// becomes one shared module node per specifier, with an import edge from each importer.
 fn connect_imports(
     graph: &mut ProgramGraph,
     imports: &[ParsedImport],
     active_paths: &HashSet<&str>,
 ) {
+    let mut modules = HashSet::new();
     for import in imports {
-        if let Some(target_path) =
-            resolve_import(&import.source_path, &import.specifier, active_paths)
-        {
-            let source = file_node_id(&import.source_path);
-            let target = file_node_id(&target_path);
-            graph.edges.push(GraphEdge {
-                id: edge_id(GraphEdgeKind::Imports, &source, &target),
-                source,
-                target,
-                kind: GraphEdgeKind::Imports,
-            });
-        }
+        let source = file_node_id(&import.source_path);
+        let target = match resolve_import(&import.source_path, &import.specifier, active_paths) {
+            Some(target_path) => file_node_id(&target_path),
+            None => {
+                let id = module_node_id(&import.specifier);
+                if modules.insert(id.clone()) {
+                    graph.nodes.push(GraphNode {
+                        id: id.clone(),
+                        kind: GraphNodeKind::Import,
+                        name: format!("import {}", import.specifier),
+                        // Modules live outside the workspace, so there is no file to open.
+                        path: String::new(),
+                        start_line: 1,
+                        end_line: 1,
+                        detail: Some(import.specifier.clone()),
+                        exported: false,
+                    });
+                }
+                id
+            }
+        };
+        // Duplicate edges (a file importing the same module twice) are removed by `sort`.
+        graph.edges.push(GraphEdge {
+            id: edge_id(GraphEdgeKind::Imports, &source, &target),
+            source,
+            target,
+            kind: GraphEdgeKind::Imports,
+        });
     }
 }
 
@@ -327,6 +342,27 @@ fn connect_calls(
             });
         }
     }
+}
+
+fn collect_export_specifiers(node: Node<'_>, context: &mut ParseContext<'_>) {
+    if node.kind() == "export_specifier" {
+        if let Some(name) = node.child_by_field_name("name") {
+            context
+                .exported_names
+                .insert(node_text(name, context.source));
+        }
+        return;
+    }
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        collect_export_specifiers(child, context);
+    }
+}
+
+fn is_top_level(node: &GraphNode, edges: &[GraphEdge], file_id: &str) -> bool {
+    edges.iter().any(|edge| {
+        edge.kind == GraphEdgeKind::Contains && edge.source == file_id && edge.target == node.id
+    })
 }
 
 fn import_names(node: Node<'_>, source: &str) -> Vec<String> {
@@ -453,21 +489,16 @@ fn node_text(node: Node<'_>, source: &str) -> String {
         .to_owned()
 }
 
-fn source_line(node: Node<'_>, source: &str) -> String {
-    node_text(node, source)
-        .lines()
-        .next()
-        .unwrap_or("export")
-        .trim()
-        .to_owned()
-}
-
 fn strip_quotes(value: &str) -> String {
     value.trim_matches(['\'', '"']).to_owned()
 }
 
 fn file_node_id(path: &str) -> String {
     format!("file:{path}")
+}
+
+fn module_node_id(specifier: &str) -> String {
+    format!("module:{specifier}")
 }
 
 fn symbol_node_id(path: &str, kind: &str, name: &str, byte: usize) -> String {
@@ -517,6 +548,84 @@ mod tests {
                 .iter()
                 .any(|edge| edge.kind == GraphEdgeKind::Calls)
         );
+    }
+
+    #[test]
+    fn shares_one_node_per_external_module() {
+        let mut adapter = TypeScriptAdapter::new().expect("adapter");
+        let files = vec![
+            source(
+                "src/index.ts",
+                "import { checkGuess } from './game.js'
+import * as readline from 'node:readline/promises'",
+            ),
+            source(
+                "src/input.ts",
+                "import * as readline from 'node:readline/promises'
+import { stdin } from 'node:readline/promises'",
+            ),
+            source("src/game.ts", "export function checkGuess() {}"),
+        ];
+        let graph = adapter.analyze(&files).expect("graph");
+        let modules = graph
+            .nodes
+            .iter()
+            .filter(|node| node.kind == GraphNodeKind::Import)
+            .map(|node| node.id.as_str())
+            .collect::<Vec<_>>();
+        assert_eq!(modules, vec!["module:node:readline/promises"]);
+        let importers = graph
+            .edges
+            .iter()
+            .filter(|edge| edge.target == "module:node:readline/promises")
+            .map(|edge| (edge.kind, edge.source.as_str()))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            importers,
+            vec![
+                (GraphEdgeKind::Imports, "file:src/index.ts"),
+                (GraphEdgeKind::Imports, "file:src/input.ts"),
+            ]
+        );
+        assert!(
+            graph
+                .edges
+                .iter()
+                .any(|edge| edge.kind == GraphEdgeKind::Imports
+                    && edge.source == "file:src/index.ts"
+                    && edge.target == "file:src/game.ts")
+        );
+    }
+
+    #[test]
+    fn marks_exported_symbols_without_export_nodes() {
+        let mut adapter = TypeScriptAdapter::new().expect("adapter");
+        let graph = adapter
+            .analyze(&[source(
+                "game.ts",
+                "export function direct() {}
+function listed() {}
+function local() {}
+export { listed }",
+            )])
+            .expect("graph");
+        let exported = |name: &str| {
+            graph
+                .nodes
+                .iter()
+                .find(|node| node.name == name)
+                .map(|node| node.exported)
+        };
+        assert_eq!(exported("direct"), Some(true));
+        assert_eq!(exported("listed"), Some(true));
+        assert_eq!(exported("local"), Some(false));
+        let file_id = file_node_id("game.ts");
+        let direct = graph
+            .nodes
+            .iter()
+            .find(|node| node.name == "direct")
+            .expect("direct");
+        assert!(is_top_level(direct, &graph.edges, &file_id));
     }
 
     #[test]

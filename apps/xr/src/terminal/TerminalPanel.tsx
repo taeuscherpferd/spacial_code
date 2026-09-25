@@ -21,7 +21,9 @@ export const TerminalPanel = ({
   onActivate,
   onInput,
 }: TerminalPanelProps) => {
-  const [buffer, setBuffer] = useState<TerminalBuffer>(() => TerminalLogic.create())
+  const [buffer, setBuffer] = useState<TerminalBuffer>(() =>
+    TerminalLogic.create(),
+  )
   const [scrollback, setScrollback] = useState(0)
   const consumedChunks = useRef(0)
 
@@ -86,10 +88,20 @@ export const TerminalPanel = ({
           roughness={0.82}
         />
       </RoundedBox>
-      <Text position={[-2.35, 0.59, 0.075]} fontSize={0.13} color="#f4f6ff" anchorX="left">
+      <Text
+        position={[-2.35, 0.59, 0.075]}
+        fontSize={0.13}
+        color="#f4f6ff"
+        anchorX="left"
+      >
         Terminal
       </Text>
-      <Text position={[2.35, 0.59, 0.075]} fontSize={0.08} color="#78cfc7" anchorX="right">
+      <Text
+        position={[2.35, 0.59, 0.075]}
+        fontSize={0.08}
+        color="#78cfc7"
+        anchorX="right"
+      >
         {processLabel(process)}
       </Text>
       {lines.map((line, lineIndex) => {
@@ -100,7 +112,11 @@ export const TerminalPanel = ({
           return (
             <Text
               key={`${lineIndex}:${spanIndex}`}
-              position={[-2.35 + start * characterWidth, 0.39 - lineIndex * 0.14, 0.075]}
+              position={[
+                -2.35 + start * characterWidth,
+                0.39 - lineIndex * 0.14,
+                0.075,
+              ]}
               fontSize={0.095}
               color={span.color}
               anchorX="left"

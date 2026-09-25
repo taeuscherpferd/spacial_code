@@ -1,4 +1,5 @@
-export type SyntaxTokenKind = 'plain' | 'keyword' | 'string' | 'number' | 'comment'
+export type SyntaxTokenKind =
+  'plain' | 'keyword' | 'string' | 'number' | 'comment'
 
 export interface SyntaxToken {
   text: string
@@ -72,7 +73,11 @@ export class CodeEditorLogic {
     return this.replaceRange(state, state.cursor, state.cursor + 1, '')
   }
 
-  static move(state: EditorState, movement: CursorMovement, extend: boolean): EditorState {
+  static move(
+    state: EditorState,
+    movement: CursorMovement,
+    extend: boolean,
+  ): EditorState {
     const starts = this.lineStarts(state.text)
     const currentLine = this.lineAt(starts, state.cursor)
     const currentColumn = state.cursor - (starts[currentLine] ?? 0)
@@ -85,10 +90,20 @@ export class CodeEditorLogic {
         cursor = Math.min(state.text.length, state.cursor + 1)
         break
       case 'up':
-        cursor = this.offsetAt(state.text, starts, currentLine - 1, currentColumn)
+        cursor = this.offsetAt(
+          state.text,
+          starts,
+          currentLine - 1,
+          currentColumn,
+        )
         break
       case 'down':
-        cursor = this.offsetAt(state.text, starts, currentLine + 1, currentColumn)
+        cursor = this.offsetAt(
+          state.text,
+          starts,
+          currentLine + 1,
+          currentColumn,
+        )
         break
       case 'home':
         cursor = starts[currentLine] ?? 0
@@ -104,7 +119,11 @@ export class CodeEditorLogic {
     }
   }
 
-  static setCursor(state: EditorState, offset: number, extend = false): EditorState {
+  static setCursor(
+    state: EditorState,
+    offset: number,
+    extend = false,
+  ): EditorState {
     return {
       ...state,
       cursor: Math.min(Math.max(offset, 0), state.text.length),
@@ -147,7 +166,11 @@ export class CodeEditorLogic {
     }
   }
 
-  static scroll(state: EditorState, lines: number, visibleLineCount: number): EditorState {
+  static scroll(
+    state: EditorState,
+    lines: number,
+    visibleLineCount: number,
+  ): EditorState {
     const lineCount = this.lineStarts(state.text).length
     const maxScroll = Math.max(0, lineCount - visibleLineCount)
     return {
@@ -156,7 +179,10 @@ export class CodeEditorLogic {
     }
   }
 
-  static revealCursor(state: EditorState, visibleLineCount: number): EditorState {
+  static revealCursor(
+    state: EditorState,
+    visibleLineCount: number,
+  ): EditorState {
     const starts = this.lineStarts(state.text)
     const cursorLine = this.lineAt(starts, state.cursor)
     if (cursorLine < state.scrollLine) {
@@ -171,23 +197,29 @@ export class CodeEditorLogic {
   static visibleLines(state: EditorState, count: number): VisibleEditorLine[] {
     const starts = this.lineStarts(state.text)
     const selection = this.selection(state)
-    return starts.slice(state.scrollLine, state.scrollLine + count).map((start, index) => {
-      const lineIndex = state.scrollLine + index
-      const end = this.lineEnd(state.text, starts, lineIndex)
-      const text = state.text.slice(start, end)
-      const selectedStart = Math.max(selection.start, start)
-      const selectedEnd = Math.min(selection.end, end)
-      return {
-        number: lineIndex + 1,
-        startOffset: start,
-        text,
-        tokens: this.tokenize(text),
-        cursorColumn:
-          state.cursor >= start && state.cursor <= end ? state.cursor - start : null,
-        selectionStart: selectedEnd > selectedStart ? selectedStart - start : null,
-        selectionEnd: selectedEnd > selectedStart ? selectedEnd - start : null,
-      }
-    })
+    return starts
+      .slice(state.scrollLine, state.scrollLine + count)
+      .map((start, index) => {
+        const lineIndex = state.scrollLine + index
+        const end = this.lineEnd(state.text, starts, lineIndex)
+        const text = state.text.slice(start, end)
+        const selectedStart = Math.max(selection.start, start)
+        const selectedEnd = Math.min(selection.end, end)
+        return {
+          number: lineIndex + 1,
+          startOffset: start,
+          text,
+          tokens: this.tokenize(text),
+          cursorColumn:
+            state.cursor >= start && state.cursor <= end
+              ? state.cursor - start
+              : null,
+          selectionStart:
+            selectedEnd > selectedStart ? selectedStart - start : null,
+          selectionEnd:
+            selectedEnd > selectedStart ? selectedEnd - start : null,
+        }
+      })
   }
 
   static tokenize(line: string): SyntaxToken[] {
@@ -198,7 +230,11 @@ export class CodeEditorLogic {
     for (const match of line.matchAll(pattern)) {
       const start = match.index
       if (start > cursor) {
-        tokens.push({ text: line.slice(cursor, start), start: cursor, kind: 'plain' })
+        tokens.push({
+          text: line.slice(cursor, start),
+          start: cursor,
+          kind: 'plain',
+        })
       }
       const text = match[0]
       tokens.push({ text, start, kind: this.tokenKind(text) })
@@ -210,7 +246,10 @@ export class CodeEditorLogic {
     return tokens
   }
 
-  private static replaceSelection(state: EditorState, value: string): EditorState {
+  private static replaceSelection(
+    state: EditorState,
+    value: string,
+  ): EditorState {
     const selection = this.selection(state)
     return this.replaceRange(state, selection.start, selection.end, value)
   }
@@ -232,7 +271,10 @@ export class CodeEditorLogic {
     }
   }
 
-  private static selection(state: EditorSnapshot): { start: number; end: number } {
+  private static selection(state: EditorSnapshot): {
+    start: number
+    end: number
+  } {
     const anchor = state.anchor ?? state.cursor
     return {
       start: Math.min(anchor, state.cursor),
@@ -294,4 +336,3 @@ export class CodeEditorLogic {
     return 'keyword'
   }
 }
-

@@ -24,14 +24,13 @@ describe('CodeEditorLogic', () => {
     let state = CodeEditorLogic.create('one\ntwo\nthree\nfour', 4)
     state = CodeEditorLogic.revealCursor({ ...state, scrollLine: 0 }, 2)
     expect(state.scrollLine).toBe(2)
-    expect(CodeEditorLogic.visibleLines(state, 2).map((line) => line.text)).toEqual([
-      'three',
-      'four',
-    ])
+    expect(
+      CodeEditorLogic.visibleLines(state, 2).map((line) => line.text),
+    ).toEqual(['three', 'four'])
   })
 
   it('assigns basic syntax colors', () => {
-    const tokens = CodeEditorLogic.tokenize("const answer = 42 // important")
+    const tokens = CodeEditorLogic.tokenize('const answer = 42 // important')
     expect(tokens.find((token) => token.text === 'const')?.kind).toBe('keyword')
     expect(tokens.find((token) => token.text === '42')?.kind).toBe('number')
     expect(tokens.at(-1)?.kind).toBe('comment')
@@ -43,13 +42,17 @@ describe('CodeEditorLogic', () => {
     expect(state.text).toBe('bc')
     state = CodeEditorLogic.deleteForward(state)
     expect(state.text).toBe('c')
-    expect(CodeEditorLogic.deleteBackward(CodeEditorLogic.create('x')).text).toBe('x')
+    expect(
+      CodeEditorLogic.deleteBackward(CodeEditorLogic.create('x')).text,
+    ).toBe('x')
     const end = CodeEditorLogic.setCursor(CodeEditorLogic.create('x'), 1)
     expect(CodeEditorLogic.deleteForward(end).text).toBe('x')
   })
 
   it('selects text and clamps scrolling to the document', () => {
-    let state = CodeEditorLogic.selectAll(CodeEditorLogic.create('one\ntwo\nthree'))
+    let state = CodeEditorLogic.selectAll(
+      CodeEditorLogic.create('one\ntwo\nthree'),
+    )
     expect(CodeEditorLogic.selectedText(state)).toBe('one\ntwo\nthree')
     state = CodeEditorLogic.scroll(state, 100, 2)
     expect(state.scrollLine).toBe(1)

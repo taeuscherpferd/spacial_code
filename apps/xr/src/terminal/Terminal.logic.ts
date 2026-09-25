@@ -46,7 +46,9 @@ export class TerminalLogic {
 
   static consume(buffer: TerminalBuffer, chunk: string): TerminalBuffer {
     const state: TerminalBuffer = {
-      lines: buffer.lines.map((line) => ({ spans: line.spans.map((span) => ({ ...span })) })),
+      lines: buffer.lines.map((line) => ({
+        spans: line.spans.map((span) => ({ ...span })),
+      })),
       color: buffer.color,
       pendingEscape: '',
       pendingCarriageReturn: buffer.pendingCarriageReturn,
@@ -93,7 +95,11 @@ export class TerminalLogic {
     return state
   }
 
-  static visibleLines(buffer: TerminalBuffer, count: number, scrollback: number): TerminalLine[] {
+  static visibleLines(
+    buffer: TerminalBuffer,
+    count: number,
+    scrollback: number,
+  ): TerminalLine[] {
     const end = Math.max(0, buffer.lines.length - scrollback)
     const start = Math.max(0, end - count)
     return buffer.lines.slice(start, end)
@@ -128,11 +134,7 @@ export class TerminalLogic {
       return
     }
     const command = sequence.at(-1)
-    const values = sequence
-      .slice(2, -1)
-      .split(';')
-      .filter(Boolean)
-      .map(Number)
+    const values = sequence.slice(2, -1).split(';').filter(Boolean).map(Number)
     if (command === 'm') {
       for (const value of values.length ? values : [0]) {
         if (value === 0 || value === 39) {
