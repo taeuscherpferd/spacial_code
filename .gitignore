@@ -6,3 +6,4 @@
 *.tsbuildinfo
 *.log
 .DS_Store
+/apps/node_modules/**
