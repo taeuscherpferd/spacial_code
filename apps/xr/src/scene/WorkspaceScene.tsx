@@ -8,9 +8,9 @@ import { CodeEditor } from '@/editor/CodeEditor'
 import { CodeGraph } from '@/graph/CodeGraph'
 import { SpatialToolbar } from '@/scene/SpatialToolbar'
 import { TerminalPanel } from '@/terminal/TerminalPanel'
+import { Grid, OrbitControls } from '@react-three/drei'
+import { useXR, XROrigin } from '@react-three/xr'
 import { useState } from 'react'
-import { useXR } from '@react-three/xr'
-import { Grid, OrbitControls, Text } from '@react-three/drei'
 
 interface WorkspaceSceneProps {
   graph: ProgramGraph
@@ -85,9 +85,6 @@ export const WorkspaceScene = ({
         fadeStrength={1.2}
         infiniteGrid
       />
-      <Text position={[-3.2, 2.92, 0]} fontSize={0.16} color="#8792ba">
-        LIVE PROGRAM GRAPH
-      </Text>
       <CodeGraph
         graph={graph}
         selectedNodeId={selectedNode?.id ?? null}
@@ -136,6 +133,7 @@ export const WorkspaceScene = ({
         minDistance={1}
         maxDistance={60}
       />
+      <XROrigin position={[-1, 0, 3]} />
     </>
   )
 }

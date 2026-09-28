@@ -52,16 +52,12 @@ Requirements: current Rust, Node.js 22 or newer, and pnpm.
 
 ```bash
 pnpm install
-pnpm server
-```
-
-In a second terminal:
-
-```bash
 pnpm dev
 ```
 
-Open `http://127.0.0.1:5173`. The server command opens `examples/guessing-game` by default.
+Without a local certificate, open `http://127.0.0.1:5173` for desktop development. The server command opens `examples/guessing-game` by default.
+
+For trusted local HTTPS from a headset, install [mkcert](https://github.com/FiloSottile/mkcert), run `mkcert -install` once to trust its local CA on this computer, then run `pnpm https:cert` and `pnpm dev`. Open the printed `https://` LAN address on your headset and install the printed `rootCA.pem` certificate as a trusted CA there too. Keep the corresponding private key on your development computer. Both devices must be on the same local network. The app and WebSocket proxy continue to run on your computer. If your LAN address changes, rerun `pnpm https:cert`.
 
 To open another TypeScript project:
 

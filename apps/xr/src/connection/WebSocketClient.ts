@@ -35,7 +35,7 @@ export class WebSocketClient {
     }
     this.dispatch(connectionChanged('connecting'))
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const host = import.meta.env.DEV ? '127.0.0.1:4310' : window.location.host
+    const host = window.location.host
     const socket = new WebSocket(`${protocol}://${host}/ws`)
     this.socket = socket
     socket.addEventListener('open', () => {

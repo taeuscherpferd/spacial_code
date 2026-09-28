@@ -1,6 +1,7 @@
 /target/
 **/node_modules/**
 /apps/xr/dist/
+/apps/xr/.cert/
 /apps/xr/coverage/
 /examples/*/dist/
 *.tsbuildinfo

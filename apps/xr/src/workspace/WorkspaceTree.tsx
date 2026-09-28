@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
 import type { WorkspaceEntry, WorkspaceSnapshot } from '@/connection/protocol'
 import styles from '@/workspace/WorkspaceTree.module.scss'
+import { useMemo, useState } from 'react'
 
 interface WorkspaceTreeProps {
   workspace: WorkspaceSnapshot | null
@@ -34,7 +34,7 @@ export const WorkspaceTree = ({
   return (
     <aside className={styles.tree} aria-label="TypeScript workspace">
       <div className={styles.heading}>
-        <span>Workspace</span>
+        <span>{workspace?.name}</span>
         <span className={styles.count}>{fileCount} TS</span>
       </div>
       {workspace ? (
