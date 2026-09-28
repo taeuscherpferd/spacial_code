@@ -1,3 +1,4 @@
+import { SpatialGraphLayoutLogic } from '@/graph/SpatialGraphLayout.logic'
 import type {
   GraphEdge,
   GraphNode,
@@ -62,25 +63,7 @@ export class CodeGraphLogic {
   }
 
   static layout(graph: ProgramGraph): Map<string, Position3> {
-    const result = new Map<string, Position3>()
-    const files = graph.nodes.filter((node) => node.kind === 'file')
-    const contains = this.childrenByParent(graph)
-    // External modules belong to no file, so they get their own column left of the files.
-    graph.nodes
-      .filter((node) => node.kind === 'import')
-      .forEach((module, index) => {
-        result.set(module.id, [-5.75, 2.25 - index * 0.54, 0])
-      })
-    let top = 2.25
-    files.forEach((file) => {
-      const childCount = contains.get(file.id)?.length ?? 0
-      const blockHeight = Math.max(0.64, childCount * 0.54)
-      const centerY = top - blockHeight / 2
-      result.set(file.id, [-4.25, centerY, 0])
-      this.layoutChildren(contains, file.id, result, -4.25, centerY, 0)
-      top -= blockHeight + 0.18
-    })
-    return result
+    return SpatialGraphLayoutLogic.layout(graph)
   }
 
   static visible(
@@ -238,34 +221,6 @@ export class CodeGraphLogic {
       siblings.sort((left, right) => left.startLine - right.startLine)
     }
     return children
-  }
-
-  private static layoutChildren(
-    children: Map<string, GraphNode[]>,
-    parentId: string,
-    result: Map<string, Position3>,
-    parentX: number,
-    centerY: number,
-    depth: number,
-  ): void {
-    const descendants = children.get(parentId) ?? []
-    descendants.forEach((child, index) => {
-      const offset = ((descendants.length - 1) / 2 - index) * 0.54
-      const position: Position3 = [
-        parentX + 1.3,
-        centerY + offset,
-        depth * 0.12,
-      ]
-      result.set(child.id, position)
-      this.layoutChildren(
-        children,
-        child.id,
-        result,
-        position[0],
-        position[1],
-        depth + 1,
-      )
-    })
   }
 
   private static hiddenDescendants(

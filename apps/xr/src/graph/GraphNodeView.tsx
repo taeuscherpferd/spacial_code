@@ -1,6 +1,6 @@
 import { Billboard, Text } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Plane, Vector3, type Group } from 'three'
 import type { GraphNode } from '@/connection/protocol'
 import { CodeGraphLogic, type Position3 } from '@/graph/CodeGraph.logic'
@@ -10,6 +10,7 @@ interface GraphNodeViewProps {
   position: Position3
   selected: boolean
   collapsed: boolean
+  onDraggingChange: (dragging: boolean) => void
   onMove: (id: string, position: Position3) => void
   onSelect: (node: GraphNode) => void
   onToggleCollapsed: (id: string) => void
@@ -32,6 +33,7 @@ export const GraphNodeView = ({
   selected,
   collapsed,
   onMove,
+  onDraggingChange,
   onSelect,
   onToggleCollapsed,
   onFocus,
@@ -50,6 +52,8 @@ export const GraphNodeView = ({
   // Where the press started; cleared once it turns into a drag so release won't select.
   const pressStart = useRef<Vector3 | null>(null)
   const dragPlane = useRef(new Plane())
+
+  useEffect(() => () => onDraggingChange(false), [onDraggingChange])
 
   /** Where the pointer ray crosses the node's drag plane, in the graph's local space. */
   const pointOnDragPlane = (
@@ -79,7 +83,8 @@ export const GraphNodeView = ({
       : new Vector3()
     pressStart.current = start ?? new Vector3(...position)
     // R3F capture keeps move events coming to this node even when the ray leaves the sphere.
-    ;(event.target as unknown as Element).setPointerCapture(event.pointerId)
+    ;(event.target as Element).setPointerCapture(event.pointerId)
+    onDraggingChange(true)
   }
 
   const handlePointerMove = (event: ThreeEvent<PointerEvent>): void => {
@@ -98,7 +103,7 @@ export const GraphNodeView = ({
       pressStart.current = null
     }
     point.add(grabOffset.current)
-    onMove(node.id, [point.x, point.y, position[2]])
+    onMove(node.id, [point.x, point.y, point.z])
   }
 
   const endDrag = (event: ThreeEvent<PointerEvent>): void => {
@@ -106,7 +111,8 @@ export const GraphNodeView = ({
       return
     }
     grabOffset.current = null
-    ;(event.target as unknown as Element).releasePointerCapture(event.pointerId)
+    ;(event.target as Element).releasePointerCapture(event.pointerId)
+    onDraggingChange(false)
     // A press that never became a drag is a click.
     if (pressStart.current && event.type === 'pointerup') {
       onSelect(node)

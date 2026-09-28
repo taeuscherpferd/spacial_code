@@ -16,6 +16,7 @@ interface CodeGraphProps {
   selectedNodeId: string | null
   collapsedNodeIds: ReadonlySet<string>
   focusedNodeId: string | null
+  onDraggingChange: (dragging: boolean) => void
   onSelect: (node: GraphNode) => void
   onToggleCollapsed: (id: string) => void
   onFocus: (id: string) => void
@@ -60,6 +61,7 @@ export const CodeGraph = ({
   collapsedNodeIds,
   focusedNodeId,
   onSelect,
+  onDraggingChange,
   onToggleCollapsed,
   onFocus,
   scopeOptions = defaultScopeOptions,
@@ -159,6 +161,7 @@ export const CodeGraph = ({
             selected={node.id === selectedNodeId}
             collapsed={collapsedNodeIds.has(node.id)}
             onMove={moveNode}
+            onDraggingChange={onDraggingChange}
             onSelect={onSelect}
             onToggleCollapsed={onToggleCollapsed}
             onFocus={onFocus}

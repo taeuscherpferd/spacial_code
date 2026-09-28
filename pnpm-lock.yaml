@@ -41,6 +41,9 @@ importers:
       three:
         specifier: ^0.180.0
         version: 0.180.0
+      typescript:
+        specifier: ~5.9.0
+        version: 5.9.3
     devDependencies:
       '@eslint/js':
         specifier: ^9.36.0
@@ -78,9 +81,6 @@ importers:
       sass:
         specifier: ^1.93.0
         version: 1.103.1
-      typescript:
-        specifier: ~5.9.0
-        version: 5.9.3
       typescript-eslint:
         specifier: ^8.44.0
         version: 8.68.0(eslint@9.39.5(supports-color@7.2.0))(supports-color@10.2.2)(typescript@5.9.3)

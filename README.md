@@ -9,9 +9,11 @@ The same interface works with a mouse and keyboard or in WebXR. Desktop support 
 - Recursive TypeScript workspace discovery with `.gitignore` support and safe, workspace-contained file access
 - Incremental Tree-sitter parsing for files, functions, classes, imports, exports, and call relationships
 - Filesystem watching and live graph updates after in-app or external edits
+- Deterministic 3D file clusters with symbols distributed around their parents and spacing reserved for nested contents
 - Draggable graph nodes with hover, selection, expand/collapse, focus, and back interactions
 - Source locations that open the selected file and symbol
-- A 3D code editor with cursor and selection movement, keyboard/paste input, scrolling, undo, redo, save, syntax color, and visible-line virtualization
+- A 3D code editor with measured monospace text, accurate pointer placement, drag/keyboard selection, tab stops, automatic indentation, horizontal/vertical scrolling, undo/redo, save, syntax colors, and visible-line virtualization
+- Live TypeScript/JavaScript syntax diagnostics in a background worker, with error underlines and messages at the hovered location or cursor
 - A true pseudo-terminal with stdout, stderr, stdin, Ctrl+C, resize support, bounded scrollback, and basic ANSI colors/control sequences
 - Generic JSON run configurations with Run, Stop, and Restart controls
 - A small interactive guessing game that demonstrates the entire workflow
@@ -94,12 +96,13 @@ The command is intentionally generic, so the same process subsystem can later la
 ## Controls
 
 - Point and select a node to open its real source.
-- Drag a node to reorganize the graph.
+- Drag a node to reorganize the graph on a view-facing plane, preserving all three coordinates. Orbit to another angle to adjust its depth.
+- File clusters extend into depth; selecting a file reveals its surrounding symbols without rearranging the layout. Labels face the viewer.
 - Double-click a node to focus it and its direct relationships.
 - Right-click a node to collapse or expand its contained symbols.
-- Select the editor, then type normally. Use Shift with cursor movement for selection, `Ctrl/Cmd+Z` for undo, and `Ctrl/Cmd+S` to save.
+- Select the editor, then type normally. Drag over text or Shift-click to select. Shift+wheel scrolls horizontally; cursor movement reveals long lines automatically. Hover or place the cursor over an error underline to read its message. Use Shift with cursor movement for selection, `Ctrl/Cmd+Z` for undo, and `Ctrl/Cmd+S` to save.
 - Select the terminal before typing into an interactive program. `Ctrl+C` sends the terminal interrupt character.
-- Use the background to orbit, pan, and zoom. All primary actions also appear in both the desktop and spatial toolbars.
+- On desktop, drag the background to orbit, right-drag to pan, and scroll to zoom. All primary actions also appear in both the desktop and spatial toolbars.
 
 ## Verification
 
@@ -110,4 +113,8 @@ pnpm lint
 pnpm build
 ```
 
-V1 intentionally excludes LSP features, autocomplete, diagnostics, debugging, execution tracing, React-specific understanding, browser previews, Git visualization, and AI editing. Those remain additive layers over the workspace, graph, editor, terminal, source-location, and process foundations built here.
+The editor draws a high-resolution canvas texture inside the 3D scene, so its text, selections, caret, and diagnostics are visible in both desktop and immersive WebXR. Text input currently requires a physical keyboard; headset virtual keyboards and IME composition are not implemented. Diagnostics reuse the TypeScript compiler and currently report syntax errors only; they do not load project tsconfig, resolve imports, type-check the project, or apply ESLint rules.
+
+Monaco and CodeMirror provide DOM-based editor views, which are not drop-in immersive 3D surfaces. A future integration can reuse editor state/commands and language services behind this VR rendering surface.
+
+V1 intentionally excludes full LSP features, autocomplete, project type checking/linting, debugging, execution tracing, React-specific understanding, browser previews, Git visualization, and AI editing. Those remain additive layers over the workspace, graph, editor, terminal, source-location, and process foundations built here.

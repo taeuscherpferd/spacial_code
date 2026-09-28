@@ -51,6 +51,18 @@ export class CodeEditorLogic {
     return this.replaceSelection(state, value)
   }
 
+  static newline(state: EditorState): EditorState {
+    const start = this.selection(state).start
+    const prefix = state.text.slice(
+      state.text.lastIndexOf('\n', start - 1) + 1,
+      start,
+    )
+    const indentation = prefix.match(/^[\t ]*/)?.[0] ?? ''
+    const extra = /[{[(]\s*$/.test(prefix) ? '  ' : ''
+    const newline = state.text.includes('\r\n') ? '\r\n' : '\n'
+    return this.insert(state, newline + indentation + extra)
+  }
+
   static deleteBackward(state: EditorState): EditorState {
     const selection = this.selection(state)
     if (selection.start !== selection.end) {
@@ -133,6 +145,17 @@ export class CodeEditorLogic {
 
   static selectAll(state: EditorState): EditorState {
     return { ...state, anchor: 0, cursor: state.text.length }
+  }
+
+  static setSelection(
+    state: EditorState,
+    start: number,
+    end: number,
+    backward = false,
+  ): EditorState {
+    const anchor = backward ? end : start
+    const cursor = backward ? start : end
+    return this.setCursor(this.setCursor(state, anchor), cursor, start !== end)
   }
 
   static selectedText(state: EditorState): string {
