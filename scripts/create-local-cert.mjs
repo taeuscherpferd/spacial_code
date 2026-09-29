@@ -1,8 +1,8 @@
+import { spawnSync } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
 import { networkInterfaces } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { spawnSync } from 'node:child_process'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const certificateDirectory = resolve(repositoryRoot, 'apps/xr/.cert')
@@ -47,6 +47,6 @@ if (certificate.error || certificate.status !== 0) {
 const caDirectory = spawnSync('mkcert', ['-CAROOT'], { encoding: 'utf8' })
 const caRoot = caDirectory.stdout.trim()
 
-console.log(`\nLocal HTTPS is ready for https://localhost:5173 and https://${lanAddress}:5173.`)
+console.log(`\nLocal HTTPS is ready for https://localhost:5174 and https://${lanAddress}:5174.`)
 console.log(`On a headset, install and trust this local CA certificate: ${resolve(caRoot, 'rootCA.pem')}`)
 console.log('Keep the CA private key on this computer. Run pnpm dev, then open the LAN address on the headset.')

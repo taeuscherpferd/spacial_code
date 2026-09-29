@@ -6,3 +6,6 @@ confirmModulesPurge: false
 allowBuilds:
   '@parcel/watcher': true
   esbuild: true
+overrides:
+  '@pmndrs/xr>@iwer/devui': 2.3.0
+  '@pmndrs/xr>@iwer/sem': 2.3.0

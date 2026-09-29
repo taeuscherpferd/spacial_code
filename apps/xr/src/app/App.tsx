@@ -1,15 +1,32 @@
-import { Canvas } from '@react-three/fiber'
-import { createXRStore, XR } from '@react-three/xr'
-import { useEffect, useMemo, useState } from 'react'
+import styles from '@/app/App.module.scss'
 import { errorDismissed, sourceEdited, terminalCleared } from '@/app/appSlice'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import type { GraphNode } from '@/connection/protocol'
 import { webSocketClient } from '@/connection/WebSocketClient'
 import { WorkspaceScene } from '@/scene/WorkspaceScene'
 import { WorkspaceTree } from '@/workspace/WorkspaceTree'
-import styles from '@/app/App.module.scss'
+import { Canvas } from '@react-three/fiber'
+import { createXRStore, XR } from '@react-three/xr'
+import { useEffect, useMemo, useState } from 'react'
 
-const xrStore = createXRStore()
+const createXrStoreWrapper = async () => {
+  const isRunningLocal = import.meta.env.DEV && location.hostname === 'localhost'
+
+  if (isRunningLocal && navigator.xr) {
+    const supportsImmersiveVr = await navigator.xr.isSessionSupported('immersive-vr')
+
+    if (!supportsImmersiveVr) {
+      Object.defineProperty(navigator, 'xr', {
+        value: undefined,
+        configurable: true,
+      })
+    }
+  }
+
+  return createXRStore()
+}
+
+const xrStore = await createXrStoreWrapper()
 
 export const App = () => {
   const dispatch = useAppDispatch()
