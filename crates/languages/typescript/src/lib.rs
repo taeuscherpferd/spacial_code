@@ -156,8 +156,11 @@ impl LanguageAdapter for TypeScriptAdapter {
 fn visit_node(node: Node<'_>, parent_id: &str, context: &mut ParseContext<'_>) {
     let mut child_parent = parent_id.to_owned();
     match node.kind() {
-        "function_declaration" | "method_definition" => {
-            if let Some(name_node) = node.child_by_field_name("name") {
+        "variable_declarator"
+        | "function_declaration"
+        | "generator_function_declaration"
+        | "method_definition" => {
+            if let Some(name_node) = function_name(node) {
                 let name = node_text(name_node, context.source);
                 let id = symbol_node_id(context.path, "function", &name, node.start_byte());
                 add_symbol(
@@ -227,6 +230,22 @@ fn visit_node(node: Node<'_>, parent_id: &str, context: &mut ParseContext<'_>) {
     }
 }
 
+fn function_name(node: Node<'_>) -> Option<Node<'_>> {
+    let name = node.child_by_field_name("name")?;
+    if node.kind() == "variable_declarator" {
+        let value = node.child_by_field_name("value")?;
+        if name.kind() != "identifier"
+            || !matches!(
+                value.kind(),
+                "arrow_function" | "function_expression" | "generator_function"
+            )
+        {
+            return None;
+        }
+    }
+    Some(name)
+}
+
 fn add_symbol(
     context: &mut ParseContext<'_>,
     node: Node<'_>,
@@ -244,9 +263,15 @@ fn add_symbol(
         start_line: node.start_position().row + 1,
         end_line: node.end_position().row + 1,
         detail,
-        exported: node
-            .parent()
-            .is_some_and(|parent| parent.kind() == "export_statement"),
+        exported: node.parent().is_some_and(|parent| {
+            parent.kind() == "export_statement"
+                || (matches!(
+                    parent.kind(),
+                    "lexical_declaration" | "variable_declaration"
+                ) && parent
+                    .parent()
+                    .is_some_and(|ancestor| ancestor.kind() == "export_statement"))
+        }),
     });
     context.edges.push(GraphEdge {
         id: edge_id(GraphEdgeKind::Contains, parent_id, id),
@@ -626,6 +651,88 @@ export { listed }",
             .find(|node| node.name == "direct")
             .expect("direct");
         assert!(is_top_level(direct, &graph.edges, &file_id));
+    }
+
+    #[test]
+    fn discovers_function_values_and_preserves_exports_and_call_owners() {
+        let mut adapter = TypeScriptAdapter::new().expect("adapter");
+        let graph = adapter
+            .analyze(&[source(
+                "functions.ts",
+                r#"
+export const arrow = () => target();
+export let expression = function named() { target(); };
+const listed = async () => target();
+export { listed };
+const local = () => { const nested = () => target(); nested(); };
+var generator = function* () { yield target(); };
+export function* declaredGenerator() { yield target(); }
+function target() {}
+const count = 42;
+let uninitialized;
+const { destructured } = { destructured: 1 };
+"#,
+            )])
+            .expect("graph");
+        for (name, exported) in [
+            ("arrow", true),
+            ("expression", true),
+            ("listed", true),
+            ("local", false),
+            ("nested", false),
+            ("generator", false),
+            ("declaredGenerator", true),
+            ("target", false),
+        ] {
+            let symbol = graph
+                .nodes
+                .iter()
+                .find(|node| node.name == name)
+                .expect(name);
+            assert_eq!(symbol.kind, GraphNodeKind::Function);
+            assert_eq!(symbol.exported, exported, "{name}");
+            assert!(
+                graph
+                    .edges
+                    .iter()
+                    .any(|edge| edge.kind == GraphEdgeKind::Contains && edge.target == symbol.id)
+            );
+            if !matches!(name, "local" | "target") {
+                assert!(
+                    graph
+                        .edges
+                        .iter()
+                        .any(|edge| edge.kind == GraphEdgeKind::Calls && edge.source == symbol.id),
+                    "{name} owns its calls"
+                );
+            }
+        }
+        assert_eq!(
+            graph
+                .nodes
+                .iter()
+                .filter(|node| node.kind == GraphNodeKind::Function)
+                .count(),
+            8
+        );
+        let nested = graph
+            .nodes
+            .iter()
+            .find(|node| node.name == "nested")
+            .expect("nested");
+        let local = graph
+            .nodes
+            .iter()
+            .find(|node| node.name == "local")
+            .expect("local");
+        assert!(
+            graph
+                .edges
+                .iter()
+                .any(|edge| edge.kind == GraphEdgeKind::Contains
+                    && edge.source == local.id
+                    && edge.target == nested.id)
+        );
     }
 
     #[test]

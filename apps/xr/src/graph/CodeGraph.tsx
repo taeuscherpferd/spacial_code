@@ -9,6 +9,7 @@ import {
   type ScopeOptions,
   defaultScopeOptions,
 } from '@/graph/CodeGraph.logic'
+import { useGraphManipulation } from '@/graph/GraphManipulation/hooks/useGraphManipulation'
 import { GraphNodeView } from '@/graph/GraphNodeView'
 
 interface CodeGraphProps {
@@ -66,6 +67,7 @@ export const CodeGraph = ({
   onFocus,
   scopeOptions = defaultScopeOptions,
 }: CodeGraphProps) => {
+  const graphRef = useGraphManipulation()
   const [overrides, setOverrides] = useState<Map<string, Position3>>(new Map())
   const positions = useMemo(
     () =>
@@ -97,7 +99,7 @@ export const CodeGraph = ({
   }
 
   return (
-    <group>
+    <group ref={graphRef}>
       {edges.map((edge) => {
         const source = positions.get(edge.source)
         const target = positions.get(edge.target)

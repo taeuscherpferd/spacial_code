@@ -91,12 +91,16 @@ The command is intentionally generic, so the same process subsystem can later la
 
 ## Controls
 
+- In VR, hold either controller’s grip button and move your hand to move the whole graph, including toward or away from you. Hold both grips and spread your hands apart to enlarge the graph, or bring them together to shrink it (0.1×–10×). Release either grip to continue moving with the other; release both to leave the graph in place. Grips work anywhere, without pointing at a node.
+- VR triggers still select and drag individual nodes. The editor, terminal, and toolbar stay in place when moving the graph.
 - Point and select a node to open its real source.
 - Drag a node to reorganize the graph on a view-facing plane, preserving all three coordinates. Orbit to another angle to adjust its depth.
 - File clusters extend into depth; selecting a file reveals its surrounding symbols without rearranging the layout. Labels face the viewer.
+- Function nodes include declarations, generators, and named variables initialized with arrow functions or function expressions. Exported symbols keep their dotted orange connections.
 - Double-click a node to focus it and its direct relationships.
 - Right-click a node to collapse or expand its contained symbols.
 - Select the editor, then type normally. Drag over text or Shift-click to select. Shift+wheel scrolls horizontally; cursor movement reveals long lines automatically. Hover or place the cursor over an error underline to read its message. Use Shift with cursor movement for selection, `Ctrl/Cmd+Z` for undo, and `Ctrl/Cmd+S` to save.
+- In VR, virtual keyboard edits use the spatial editor's cursor and selection. Text composition appears live, including deletion, and remains one undo step. Select the **Keyboard** button (highlighted on hover) in the editor header to open or reopen the VR keyboard. Selecting text or moving the cursor never requests keyboard focus in VR. The headset edits an isolated persistent buffer that is not rewritten between keystrokes or at composition end; edits are applied at the spatial cursor without exposing surrounding source to native selection or composition replacement.
 - Select the terminal before typing into an interactive program. `Ctrl+C` sends the terminal interrupt character.
 - On desktop, drag the background to orbit, right-drag to pan, and scroll to zoom. All primary actions also appear in both the desktop and spatial toolbars.
 
@@ -109,7 +113,7 @@ pnpm lint
 pnpm build
 ```
 
-The editor draws a high-resolution canvas texture inside the 3D scene, so its text, selections, caret, and diagnostics are visible in both desktop and immersive WebXR. Text input currently requires a physical keyboard; headset virtual keyboards and IME composition are not implemented. Diagnostics reuse the TypeScript compiler and currently report syntax errors only; they do not load project tsconfig, resolve imports, type-check the project, or apply ESLint rules.
+The editor draws a high-resolution canvas texture inside the 3D scene, so its text, selections, caret, and diagnostics are visible in both desktop and immersive WebXR. Text input supports physical keyboards and experimental headset virtual keyboards with IME composition. Quest keyboard behavior still requires validation on the headset. Diagnostics reuse the TypeScript compiler and currently report syntax errors only; they do not load project tsconfig, resolve imports, type-check the project, or apply ESLint rules.
 
 Monaco and CodeMirror provide DOM-based editor views, which are not drop-in immersive 3D surfaces. A future integration can reuse editor state/commands and language services behind this VR rendering surface.
 

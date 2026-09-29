@@ -1,9 +1,16 @@
 import styles from './CodeEditor.module.scss'
 import { RoundedBox, Text } from '@react-three/drei'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import type { SourceDocument } from '@/connection/protocol'
 import { CodeEditorLogic, type EditorState } from '@/editor/CodeEditor.logic'
 
+import { EditorButton } from '@/editor/EditorButton/EditorButton'
 import { EditorSurface } from '@/editor/EditorSurface/EditorSurface'
 import { useEditorInput } from '@/editor/hooks/useEditorInput'
 import { useEditorDiagnostics } from '@/editor/hooks/useEditorDiagnostics'
@@ -32,6 +39,11 @@ export const CodeEditor = ({
     CodeEditorLogic.create(''),
   )
 
+  const appliedText = useRef(state.text)
+  useLayoutEffect(() => {
+    appliedText.current = state.text
+  }, [state.text])
+
   const previousPath = useRef<string | undefined>(undefined)
   useEffect(() => {
     const changedFile = previousPath.current !== document?.path
@@ -59,11 +71,12 @@ export const CodeEditor = ({
     (nextState: EditorState): void => {
       const revealed = CodeEditorLogic.revealCursor(nextState, visibleLineCount)
       setState(revealed)
-      if (revealed.text !== state.text) {
+      if (revealed.text !== appliedText.current) {
+        appliedText.current = revealed.text
         onChange(revealed.text)
       }
     },
-    [onChange, state.text],
+    [onChange],
   )
 
   const focusInput = useEditorInput({
@@ -73,9 +86,10 @@ export const CodeEditor = ({
     apply,
     onSave,
   })
-  const activate = (): void => {
+  const openKeyboard = (): void => {
+    if (!document) return
     onActivate()
-    focusInput()
+    focusInput(true)
   }
   const { diagnostics, status } = useEditorDiagnostics(
     document?.path ?? '',
@@ -91,7 +105,12 @@ export const CodeEditor = ({
       onPointerOut={() => onInteractionChange(false)}
       onPointerDown={(event) => {
         event.stopPropagation()
-        activate()
+        event.nativeEvent.preventDefault()
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation()
+        event.nativeEvent.preventDefault()
+        onActivate()
       }}
       onWheel={(event) => {
         event.stopPropagation()
@@ -122,11 +141,18 @@ export const CodeEditor = ({
           ? `${document.path}${dirty ? ' •' : ''}`
           : 'Select a source node'}
       </Text>
+      <group position={[2, 1.57, 0.1]}>
+        <EditorButton
+          label="Keyboard"
+          disabled={!document}
+          onPress={openKeyboard}
+        />
+      </group>
       <EditorSurface
         state={state}
         active={active}
         diagnostics={diagnostics}
-        onActivate={activate}
+        onActivate={onActivate}
         onCursor={(offset, extend) =>
           apply(CodeEditorLogic.setCursor(state, offset, extend))
         }

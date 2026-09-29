@@ -23,7 +23,7 @@ const createXrStoreWrapper = async () => {
     }
   }
 
-  return createXRStore()
+  return createXRStore({ controller: { grabPointer: false } })
 }
 
 const xrStore = await createXrStoreWrapper()

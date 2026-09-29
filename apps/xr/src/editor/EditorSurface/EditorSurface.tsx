@@ -186,7 +186,6 @@ export const EditorSurface = ({
       onPointerDown={(event) => {
         event.stopPropagation()
         event.nativeEvent.preventDefault()
-        onActivate()
         dragging.current = event.pointerId
         ;(event.target as Element).setPointerCapture(event.pointerId)
         onCursor(offsetAt(event), event.shiftKey)
@@ -199,6 +198,7 @@ export const EditorSurface = ({
       }}
       onPointerUp={(event) => {
         event.stopPropagation()
+        event.nativeEvent.preventDefault()
         onActivate()
         dragging.current = null
         ;(event.target as Element).releasePointerCapture(event.pointerId)
