@@ -42,6 +42,7 @@ struct ParseContext<'a> {
 
 pub struct TypeScriptAdapter {
     parser: Parser,
+    tsx_parser: Parser,
     documents: HashMap<String, CachedDocument>,
 }
 
@@ -49,11 +50,16 @@ impl TypeScriptAdapter {
     pub fn new() -> Result<Self> {
         let mut parser = Parser::new();
         let language = tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into();
+        let mut tsx_parser = Parser::new();
         parser
             .set_language(&language)
             .context("could not initialize the TypeScript parser")?;
+        tsx_parser
+            .set_language(&tree_sitter_typescript::LANGUAGE_TSX.into())
+            .context("could not initialize the TSX parser")?;
         Ok(Self {
             parser,
+            tsx_parser,
             documents: HashMap::new(),
         })
     }
@@ -70,10 +76,15 @@ impl TypeScriptAdapter {
         if let (Some(document), Some(tree)) = (old_document.as_ref(), old_tree.as_mut()) {
             tree.edit(&calculate_edit(&document.source, &file.content));
         }
-        let tree = self
-            .parser
-            .parse(&file.content, old_tree.as_ref())
-            .with_context(|| format!("could not parse {}", file.relative_path))?;
+        let tree = if file.relative_path.ends_with(".tsx") {
+            self.tsx_parser
+                .parse(&file.content, old_tree.as_ref())
+                .with_context(|| format!("could not parse {}", file.relative_path))?
+        } else {
+            self.parser
+                .parse(&file.content, old_tree.as_ref())
+                .with_context(|| format!("could not parse {}", file.relative_path))?
+        };
         self.documents.insert(
             file.relative_path.clone(),
             CachedDocument {
@@ -91,7 +102,7 @@ impl LanguageAdapter for TypeScriptAdapter {
     }
 
     fn extensions(&self) -> &'static [&'static str] {
-        &["ts"]
+        &["ts", "tsx"]
     }
 
     fn analyze(&mut self, files: &[SourceFile]) -> Result<ProgramGraph> {
@@ -753,5 +764,28 @@ const { destructured } = { destructured: 1 };
         let edit = calculate_edit("one\ntwo", "one\nthree");
         assert_eq!(edit.start_position.row, 1);
         assert_eq!(edit.new_end_position, Point::new(1, 5));
+    }
+
+    #[test]
+    fn parses_tsx_components_with_jsx() {
+        let mut adapter = TypeScriptAdapter::new().expect("adapter");
+        let graph = adapter
+            .analyze(&[source(
+                "App.tsx",
+                "export function App() { return <div>{greet()}</div> }\nfunction greet() { return 'hi' }",
+            )])
+            .expect("graph");
+        assert!(
+            graph
+                .nodes
+                .iter()
+                .any(|node| node.name == "App" && node.exported)
+        );
+        assert!(
+            graph
+                .edges
+                .iter()
+                .any(|edge| edge.kind == GraphEdgeKind::Calls)
+        );
     }
 }

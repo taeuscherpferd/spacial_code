@@ -284,7 +284,7 @@ fn start_watcher(state: AppState) -> Result<()> {
                 event
                     .paths
                     .iter()
-                    .any(|path| path.extension().is_some_and(|extension| extension == "ts"))
+                    .any(|path| path.extension().is_some_and(|extension| extension == "ts" || extension == "tsx"))
             });
             if !should_refresh {
                 continue;

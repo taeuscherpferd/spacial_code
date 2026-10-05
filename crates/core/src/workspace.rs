@@ -85,7 +85,7 @@ impl WorkspaceService {
                 entry
                     .path()
                     .extension()
-                    .is_some_and(|extension| extension == "ts")
+                    .is_some_and(|extension| extension == "ts" || extension == "tsx")
             })
             .map(|entry| {
                 let absolute_path = entry.path().to_path_buf();
@@ -110,7 +110,10 @@ impl WorkspaceService {
 
     pub fn write_file(&self, relative_path: &str, content: &str) -> Result<()> {
         let path = self.resolve_safe_path(relative_path)?;
-        if path.extension().is_none_or(|extension| extension != "ts") {
+        if path
+            .extension()
+            .is_none_or(|extension| extension != "ts" && extension != "tsx")
+        {
             bail!("V1 only edits TypeScript files");
         }
         fs::write(&path, content).with_context(|| format!("could not write {}", path.display()))
