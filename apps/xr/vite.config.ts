@@ -3,7 +3,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
-const certificatePath = fileURLToPath(new URL('./.cert/local-cert.pem', import.meta.url))
+const certificatePath = fileURLToPath(
+  new URL('./.cert/local-cert.pem', import.meta.url),
+)
 const keyPath = fileURLToPath(new URL('./.cert/local-key.pem', import.meta.url))
 const localCertificate =
   existsSync(certificatePath) && existsSync(keyPath)

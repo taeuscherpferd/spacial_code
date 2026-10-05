@@ -18,6 +18,11 @@ export interface VisibleGraph {
   edges: GraphEdge[]
 }
 
+export interface LayoutBounds {
+  center: Position3
+  radius: number
+}
+
 /** Display toggles for `CodeGraphLogic.scoped`. */
 export interface ScopeOptions {
   /** Show every external module, not just those the selection touches. */
@@ -29,6 +34,13 @@ export const defaultScopeOptions: ScopeOptions = { showModules: false }
 export interface ArrowPlacement {
   position: Position3
   direction: Position3
+}
+
+export const nodeColors: Record<GraphNodeKind, string> = {
+  file: '#2862ff',
+  function: '#7c4dff',
+  class: '#d652df',
+  import: '#00a895',
 }
 
 export class CodeGraphLogic {
@@ -64,6 +76,36 @@ export class CodeGraphLogic {
 
   static layout(graph: ProgramGraph): Map<string, Position3> {
     return SpatialGraphLayoutLogic.layout(graph)
+  }
+
+  /** The bounding sphere of a layout, for framing the camera around its actual extent. */
+  static bounds(
+    positions: ReadonlyMap<string, Position3>,
+  ): LayoutBounds | null {
+    if (positions.size === 0) {
+      return null
+    }
+    let minX = Infinity
+    let minY = Infinity
+    let minZ = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    let maxZ = -Infinity
+    for (const [, position] of positions) {
+      minX = Math.min(minX, position[0])
+      maxX = Math.max(maxX, position[0])
+      minY = Math.min(minY, position[1])
+      maxY = Math.max(maxY, position[1])
+      minZ = Math.min(minZ, position[2])
+      maxZ = Math.max(maxZ, position[2])
+    }
+    return {
+      center: [(minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2],
+      radius: Math.max(
+        Math.hypot(maxX - minX, maxY - minY, maxZ - minZ) / 2,
+        0.5,
+      ),
+    }
   }
 
   static visible(

@@ -13,14 +13,14 @@ export const WorkspaceTree = ({
   selectedPath,
   onOpenFile,
 }: WorkspaceTreeProps) => {
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const fileCount = useMemo(
     () => countFiles(workspace?.entries ?? []),
     [workspace?.entries],
   )
 
   const toggleDirectory = (path: string): void => {
-    setCollapsed((current) => {
+    setExpanded((current) => {
       const next = new Set(current)
       if (next.has(path)) {
         next.delete(path)
@@ -43,7 +43,7 @@ export const WorkspaceTree = ({
             <WorkspaceEntryView
               key={entry.path}
               entry={entry}
-              collapsed={collapsed}
+              expanded={expanded}
               selectedPath={selectedPath}
               onOpenFile={onOpenFile}
               onToggleDirectory={toggleDirectory}
@@ -61,7 +61,7 @@ export const WorkspaceTree = ({
 
 interface WorkspaceEntryViewProps {
   entry: WorkspaceEntry
-  collapsed: ReadonlySet<string>
+  expanded: ReadonlySet<string>
   selectedPath: string | null
   onOpenFile: (path: string) => void
   onToggleDirectory: (path: string) => void
@@ -69,13 +69,13 @@ interface WorkspaceEntryViewProps {
 
 const WorkspaceEntryView = ({
   entry,
-  collapsed,
+  expanded,
   selectedPath,
   onOpenFile,
   onToggleDirectory,
 }: WorkspaceEntryViewProps) => {
   const isDirectory = entry.kind === 'directory'
-  const isCollapsed = collapsed.has(entry.path)
+  const isCollapsed = !expanded.has(entry.path)
   return (
     <div>
       <button
@@ -96,7 +96,7 @@ const WorkspaceEntryView = ({
             <WorkspaceEntryView
               key={child.path}
               entry={child}
-              collapsed={collapsed}
+              expanded={expanded}
               selectedPath={selectedPath}
               onOpenFile={onOpenFile}
               onToggleDirectory={onToggleDirectory}

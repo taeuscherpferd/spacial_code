@@ -3,7 +3,11 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 import { Plane, Vector3, type Group } from 'three'
 import type { GraphNode } from '@/connection/protocol'
-import { CodeGraphLogic, type Position3 } from '@/graph/CodeGraph.logic'
+import {
+  CodeGraphLogic,
+  nodeColors,
+  type Position3,
+} from '@/graph/CodeGraph.logic'
 
 interface GraphNodeViewProps {
   node: GraphNode
@@ -15,13 +19,6 @@ interface GraphNodeViewProps {
   onSelect: (node: GraphNode) => void
   onToggleCollapsed: (id: string) => void
   onFocus: (id: string) => void
-}
-
-const colors: Record<GraphNode['kind'], string> = {
-  file: '#2862ff',
-  function: '#7c4dff',
-  class: '#d652df',
-  import: '#00a895',
 }
 
 /** How far (in graph units) the pointer must travel before a press becomes a drag. */
@@ -40,7 +37,7 @@ export const GraphNodeView = ({
 }: GraphNodeViewProps) => {
   const [hovered, setHovered] = useState(false)
   const radius = CodeGraphLogic.nodeRadius(node.kind)
-  const color = colors[node.kind]
+  const color = nodeColors[node.kind]
   const label =
     node.kind === 'import'
       ? `import ${node.detail?.split('/').at(-1) ?? ''}`

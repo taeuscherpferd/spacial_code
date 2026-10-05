@@ -54,6 +54,42 @@ describe('SpatialGraphLayoutLogic', () => {
     )
   })
 
+  it('does not let one huge file dictate spacing for unrelated small files', () => {
+    const plainFiles = Array.from({ length: 26 }, (_, index) =>
+      node(`plain:${index}`),
+    )
+    const withOutlier: ProgramGraph = {
+      nodes: [
+        ...plainFiles,
+        node('big'),
+        ...Array.from({ length: 80 }, (_, index) =>
+          node(`big:fn:${index}`, 'function'),
+        ),
+      ],
+      edges: Array.from({ length: 80 }, (_, index) =>
+        contains('big', `big:fn:${index}`),
+      ),
+    }
+    const withOutlierPositions = SpatialGraphLayoutLogic.layout(withOutlier)
+    const withoutOutlierPositions = SpatialGraphLayoutLogic.layout({
+      nodes: plainFiles,
+      edges: [],
+    })
+
+    // The gap between two plain files' slots should be unaffected by the unrelated huge
+    // cluster landing in a different slot elsewhere in the grid.
+    const gap = (positions: Map<string, [number, number, number]>) =>
+      Math.hypot(
+        ...positions
+          .get('plain:0')!
+          .map((value, axis) => value - positions.get('plain:1')![axis]),
+      )
+    expect(gap(withOutlierPositions)).toBeCloseTo(
+      gap(withoutOutlierPositions),
+      5,
+    )
+  })
+
   const clustered: ProgramGraph = {
     nodes: [
       node('file'),

@@ -10,10 +10,12 @@ import { createXRStore, XR } from '@react-three/xr'
 import { useEffect, useMemo, useState } from 'react'
 
 const createXrStoreWrapper = async () => {
-  const isRunningLocal = import.meta.env.DEV && location.hostname === 'localhost'
+  const isRunningLocal =
+    import.meta.env.DEV && location.hostname === 'localhost'
 
   if (isRunningLocal && navigator.xr) {
-    const supportsImmersiveVr = await navigator.xr.isSessionSupported('immersive-vr')
+    const supportsImmersiveVr =
+      await navigator.xr.isSessionSupported('immersive-vr')
 
     if (!supportsImmersiveVr) {
       Object.defineProperty(navigator, 'xr', {

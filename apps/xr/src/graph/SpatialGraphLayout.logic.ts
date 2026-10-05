@@ -43,8 +43,15 @@ export class SpatialGraphLayoutLogic {
         0,
         ...descendants.map((child) => child.radius),
       )
+      // Children sit on a sphere around their parent; r * sqrt(n) * 1.2 still leaves ~4r
+      // between neighbours, while the old factor of 2 compounded into huge nested clusters.
+      // The `childRadius + 0.6` floor keeps a lone child's cluster clear of its parent.
       const orbit = descendants.length
-        ? Math.max(0.95, childRadius * Math.sqrt(descendants.length) * 2)
+        ? Math.max(
+            0.95,
+            childRadius + 0.6,
+            childRadius * Math.sqrt(descendants.length) * 1.2,
+          )
         : 0
       return {
         node,
@@ -65,23 +72,68 @@ export class SpatialGraphLayoutLogic {
     }
 
     const positions = new Map<string, Position3>()
-    const radius = Math.max(0.35, ...roots.map((root) => root.radius))
-    const spacing = radius * 2 + 0.8
+    if (roots.length === 0) {
+      return positions
+    }
+
     const side = Math.ceil(Math.cbrt(roots.length))
-    roots.forEach((root, index) => {
-      const layer = index % side
-      const column = Math.floor(index / side) % side
-      const row = Math.floor(index / (side * side))
+    const slots = roots.map((root, index) => ({
+      root,
+      layer: index % side,
+      column: Math.floor(index / side) % side,
+      row: Math.floor(index / (side * side)),
+    }))
+    const rowCount = Math.floor((roots.length - 1) / (side * side)) + 1
+    const gap = 0.8
+    // At rest only files are shown, so in a large workspace a cell is capped well below a
+    // file's full symbol cluster, keeping the whole grid within roughly `targetExtent` per
+    // axis. A selected file's symbols may then spill into neighbouring cells. Small
+    // workspaces stay under the cap and keep fully separated clusters.
+    const targetExtent = 30
+    const cellCap = Math.max(0.35, (targetExtent / side - gap) / 2)
+
+    // Each grid line's cell size comes only from the clusters that actually land on it, so
+    // one huge file doesn't force wide spacing onto every other (likely much smaller) root.
+    const slotRadii = (
+      count: number,
+      axis: 'layer' | 'column' | 'row',
+    ): number[] => {
+      const sizes = new Array(count).fill(0.35)
+      for (const slot of slots) {
+        sizes[slot[axis]] = Math.max(
+          sizes[slot[axis]],
+          Math.min(slot.root.radius, cellCap),
+        )
+      }
+      return sizes
+    }
+    const toOffsets = (sizes: number[]): number[] => {
+      const offsets: number[] = []
+      let total = 0
+      for (const size of sizes) {
+        offsets.push(total)
+        total += size * 2 + gap
+      }
+      return offsets
+    }
+    const layerSizes = slotRadii(side, 'layer')
+    const columnSizes = slotRadii(side, 'column')
+    const rowSizes = slotRadii(rowCount, 'row')
+    const layerOffsets = toOffsets(layerSizes)
+    const columnOffsets = toOffsets(columnSizes)
+    const rowOffsets = toOffsets(rowSizes)
+
+    for (const { root, layer, column, row } of slots) {
       this.place(
         root,
         [
-          -2.4 - radius - column * spacing - layer * 0.35,
-          1.4 - row * spacing - layer * 0.25,
-          -radius - layer * spacing,
+          -2.4 - columnOffsets[column] - columnSizes[column] - layer * 0.35,
+          1.4 - rowOffsets[row] - rowSizes[row] - layer * 0.25,
+          -layerOffsets[layer] - layerSizes[layer],
         ],
         positions,
       )
-    })
+    }
     return positions
   }
 
