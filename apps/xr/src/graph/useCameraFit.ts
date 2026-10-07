@@ -1,5 +1,6 @@
 import { useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
+import { useXR } from '@react-three/xr'
 import { Fog, PerspectiveCamera, Vector3 } from 'three'
 import type { LayoutBounds } from '@/graph/CodeGraph.logic'
 
@@ -16,6 +17,9 @@ interface ControlsLike {
  * fight the user's own framing once they've navigated.
  */
 export const useCameraFit = (bounds: LayoutBounds | null): void => {
+  const session = useXR((state) => state.session)
+  const size = useThree((state) => state.size)
+  const fittedSize = useRef('')
   const camera = useThree((state) => state.camera)
   const controls = useThree(
     (state) => state.controls as unknown as ControlsLike | null,
@@ -24,20 +28,27 @@ export const useCameraFit = (bounds: LayoutBounds | null): void => {
   const fittedRadius = useRef<number | null>(null)
 
   useEffect(() => {
-    if (!bounds || !controls) {
+    if (session || !bounds || !controls) {
       return
     }
     const previous = fittedRadius.current
     const changedSubstantially =
       previous === null ||
       Math.abs(previous - bounds.radius) > previous * 0.25 + 0.5
-    if (!changedSubstantially) {
+    const viewport = `${size.width}:${size.height}`
+    if (!changedSubstantially && fittedSize.current === viewport) {
       return
     }
     fittedRadius.current = bounds.radius
+    fittedSize.current = viewport
 
     const fov = camera instanceof PerspectiveCamera ? camera.fov : 52
-    const fitDistance = bounds.radius / Math.sin((fov * Math.PI) / 360)
+    const verticalAngle = (fov * Math.PI) / 360
+    const horizontalAngle = Math.atan(
+      (Math.tan(verticalAngle) * size.width) / Math.max(size.height, 1),
+    )
+    const fitDistance =
+      bounds.radius / Math.sin(Math.min(verticalAngle, horizontalAngle))
     const distance = Math.max(fitDistance * 1.15, 4)
 
     const target = new Vector3(...bounds.center)
@@ -65,5 +76,5 @@ export const useCameraFit = (bounds: LayoutBounds | null): void => {
       scene.fog.near = Math.max(scene.fog.near, distance - bounds.radius)
       scene.fog.far = Math.max(scene.fog.far, distance + bounds.radius * 1.2)
     }
-  }, [bounds, camera, controls, scene])
+  }, [bounds, camera, controls, scene, session, size.width, size.height])
 }

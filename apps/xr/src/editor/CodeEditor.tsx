@@ -100,7 +100,6 @@ export const CodeEditor = ({
 
   return (
     <group
-      position={[2.4, 0.65, 0]}
       onPointerOver={() => onInteractionChange(true)}
       onPointerOut={() => onInteractionChange(false)}
       onPointerDown={(event) => {

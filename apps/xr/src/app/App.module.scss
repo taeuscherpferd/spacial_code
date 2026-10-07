@@ -1,4 +1,8 @@
 .app {
+  --editor-height: 32vh;
+  --sidebar-width: 14.5rem;
+  --main-left: calc(var(--sidebar-width) + 2rem);
+  --dock-bottom: calc(var(--editor-height) + 1.75rem);
   --background: #070a12;
   --panel: #0e1424;
   --border: rgb(133 153 217 / 18%);
@@ -44,7 +48,10 @@
 
 .canvas {
   position: absolute;
-  inset: 0;
+  top: 5.25rem;
+  right: 1rem;
+  bottom: calc(var(--dock-bottom) + 3.5rem);
+  left: var(--main-left);
 }
 
 .header {
@@ -191,7 +198,7 @@
 .selection {
   position: absolute;
   right: 1rem;
-  bottom: 1rem;
+  bottom: var(--dock-bottom);
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -221,9 +228,8 @@
 
 .hint {
   position: absolute;
-  bottom: 1.25rem;
-  left: calc(50% + 7rem);
-  transform: translateX(-50%);
+  bottom: calc(var(--dock-bottom) + 3rem);
+  left: var(--main-left);
   color: rgb(153 164 203 / 76%);
   font-size: 0.65rem;
   letter-spacing: 0.02em;
@@ -254,6 +260,9 @@
 }
 
 @media (max-width: 900px) {
+  .app {
+    --sidebar-width: 11rem;
+  }
   .header {
     align-items: flex-start;
   }

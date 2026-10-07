@@ -1,7 +1,9 @@
 import { RoundedBox, Text } from '@react-three/drei'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { terminalInput, processLabel } from '@/terminal/TerminalInput'
+import { useTerminalBuffer } from '@/terminal/hooks/useTerminalBuffer'
 import type { ProcessState } from '@/connection/protocol'
-import { TerminalLogic, type TerminalBuffer } from '@/terminal/Terminal.logic'
+import { TerminalLogic } from '@/terminal/Terminal.logic'
 
 interface TerminalPanelProps {
   chunks: string[]
@@ -21,29 +23,9 @@ export const TerminalPanel = ({
   onActivate,
   onInput,
 }: TerminalPanelProps) => {
-  const [buffer, setBuffer] = useState<TerminalBuffer>(() =>
-    TerminalLogic.create(),
-  )
+  const buffer = useTerminalBuffer(chunks)
   const [scrollback, setScrollback] = useState(0)
-  const consumedChunks = useRef(0)
-
-  useEffect(() => {
-    if (chunks.length < consumedChunks.current) {
-      consumedChunks.current = 0
-      setBuffer(TerminalLogic.create())
-    }
-    const pending = chunks.slice(consumedChunks.current)
-    if (pending.length) {
-      setBuffer((current) =>
-        pending.reduce(
-          (nextBuffer, chunk) => TerminalLogic.consume(nextBuffer, chunk),
-          current,
-        ),
-      )
-      consumedChunks.current = chunks.length
-      setScrollback(0)
-    }
-  }, [chunks])
+  useEffect(() => setScrollback(0), [chunks])
 
   useEffect(() => {
     if (!active) {
@@ -130,42 +112,4 @@ export const TerminalPanel = ({
       })}
     </group>
   )
-}
-
-const terminalInput = (event: KeyboardEvent): string | null => {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c') {
-    return '\u0003'
-  }
-  if (event.ctrlKey && event.key.toLowerCase() === 'd') {
-    return '\u0004'
-  }
-  const controls: Record<string, string> = {
-    Enter: '\r',
-    Backspace: '\u007f',
-    Tab: '\t',
-    ArrowUp: '\u001b[A',
-    ArrowDown: '\u001b[B',
-    ArrowRight: '\u001b[C',
-    ArrowLeft: '\u001b[D',
-  }
-  if (controls[event.key]) {
-    return controls[event.key]
-  }
-  if (!event.ctrlKey && !event.metaKey && event.key.length === 1) {
-    return event.key
-  }
-  return null
-}
-
-const processLabel = (process: ProcessState): string => {
-  switch (process.status) {
-    case 'idle':
-      return 'IDLE'
-    case 'running':
-      return '● RUNNING'
-    case 'exited':
-      return process.code === null ? 'EXITED' : `EXIT ${process.code}`
-    case 'failed':
-      return 'FAILED'
-  }
 }

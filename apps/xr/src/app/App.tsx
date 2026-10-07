@@ -3,6 +3,7 @@ import { errorDismissed, sourceEdited, terminalCleared } from '@/app/appSlice'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import type { GraphNode } from '@/connection/protocol'
 import { webSocketClient } from '@/connection/WebSocketClient'
+import { DesktopDock } from '@/app/DesktopDock/DesktopDock'
 import { WorkspaceScene } from '@/scene/WorkspaceScene'
 import { WorkspaceTree } from '@/workspace/WorkspaceTree'
 import { Canvas } from '@react-three/fiber'
@@ -31,6 +32,11 @@ const createXrStoreWrapper = async () => {
 const xrStore = await createXrStoreWrapper()
 
 export const App = () => {
+  const [immersive, setImmersive] = useState(false)
+  useEffect(
+    () => xrStore.subscribe((state) => setImmersive(Boolean(state.session))),
+    [],
+  )
   const dispatch = useAppDispatch()
   const app = useAppSelector((state) => state.app)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -80,6 +86,7 @@ export const App = () => {
     if (fileNode) {
       selectNode(fileNode)
     } else {
+      setActivePanel('editor')
       webSocketClient.send({ type: 'openSource', path })
     }
   }
@@ -167,6 +174,22 @@ export const App = () => {
           </XR>
         </Canvas>
       </div>
+
+      {!immersive && (
+        <DesktopDock
+          activePanel={activePanel}
+          document={app.source}
+          focusLine={selectedNode?.startLine ?? 1}
+          terminalChunks={app.terminalChunks}
+          process={app.process}
+          onActivePanelChange={setActivePanel}
+          onSourceChange={(content) => dispatch(sourceEdited(content))}
+          onSave={save}
+          onTerminalInput={(data) =>
+            webSocketClient.send({ type: 'terminalInput', data })
+          }
+        />
+      )}
 
       <header className={styles.header}>
         <div className={styles.brand}>

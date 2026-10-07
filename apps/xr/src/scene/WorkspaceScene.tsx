@@ -4,7 +4,7 @@ import type {
   ProgramGraph,
   SourceDocument,
 } from '@/connection/protocol'
-import { CodeEditor } from '@/editor/CodeEditor'
+import { VrEditor } from '@/editor/VrEditor/VrEditor'
 import { CodeGraph } from '@/graph/CodeGraph'
 import { SpatialToolbar } from '@/scene/SpatialToolbar'
 import { TerminalPanel } from '@/terminal/TerminalPanel'
@@ -95,36 +95,42 @@ export const WorkspaceScene = ({
         onToggleCollapsed={onToggleCollapsed}
         onFocus={onFocusNode}
       />
-      <CodeEditor
-        onInteractionChange={setEditorInteraction}
-        document={source}
-        focusLine={selectedNode?.startLine ?? 1}
-        active={activePanel === 'editor'}
-        onActivate={() => onActivePanel('editor')}
-        onChange={onSourceChange}
-        onSave={onSave}
-      />
-      <TerminalPanel
-        chunks={terminalChunks}
-        process={process}
-        active={activePanel === 'terminal'}
-        onActivate={() => onActivePanel('terminal')}
-        onInput={onTerminalInput}
-      />
-      <SpatialToolbar
-        process={process}
-        canSave={source !== null && source.content !== source.savedContent}
-        canFocus={selectedNode !== null}
-        canBack={canGoBack}
-        canCollapse={selectedNode !== null}
-        onRun={onRun}
-        onStop={onStop}
-        onRestart={onRestart}
-        onSave={() => source && onSave(source.content)}
-        onFocus={() => selectedNode && onFocusNode(selectedNode.id)}
-        onBack={onBack}
-        onCollapse={() => selectedNode && onToggleCollapsed(selectedNode.id)}
-      />
+      {session && (
+        <VrEditor
+          onInteractionChange={setEditorInteraction}
+          document={source}
+          focusLine={selectedNode?.startLine ?? 1}
+          active={activePanel === 'editor'}
+          onActivate={() => onActivePanel('editor')}
+          onChange={onSourceChange}
+          onSave={onSave}
+        />
+      )}
+      {session && (
+        <TerminalPanel
+          chunks={terminalChunks}
+          process={process}
+          active={activePanel === 'terminal'}
+          onActivate={() => onActivePanel('terminal')}
+          onInput={onTerminalInput}
+        />
+      )}
+      {session && (
+        <SpatialToolbar
+          process={process}
+          canSave={source !== null && source.content !== source.savedContent}
+          canFocus={selectedNode !== null}
+          canBack={canGoBack}
+          canCollapse={selectedNode !== null}
+          onRun={onRun}
+          onStop={onStop}
+          onRestart={onRestart}
+          onSave={() => source && onSave(source.content)}
+          onFocus={() => selectedNode && onFocusNode(selectedNode.id)}
+          onBack={onBack}
+          onCollapse={() => selectedNode && onToggleCollapsed(selectedNode.id)}
+        />
+      )}
       <OrbitControls
         makeDefault
         enabled={!session && !dragging && !editorInteraction}
