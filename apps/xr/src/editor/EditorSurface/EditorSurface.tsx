@@ -3,6 +3,7 @@ import { CanvasTexture, SRGBColorSpace } from 'three'
 import type { ThreeEvent } from '@react-three/fiber'
 import { CodeEditorLogic, type EditorState } from '@/editor/CodeEditor.logic'
 import { EditorSurfaceLogic as Layout } from '@/editor/EditorSurface/EditorSurface.logic'
+import { EditorHighlightingLogic } from '@/editor/highlighting/EditorHighlighting.logic'
 import type { EditorDiagnostic } from '@/editor/diagnostics/EditorDiagnostics.logic'
 
 interface EditorSurfaceProps {
@@ -11,14 +12,6 @@ interface EditorSurfaceProps {
   diagnostics: EditorDiagnostic[]
   onActivate: () => void
   onCursor: (offset: number, extend: boolean) => void
-}
-
-const tokenColors = {
-  plain: '#d9def2',
-  keyword: '#c792ea',
-  string: '#c3e88d',
-  number: '#f78c6c',
-  comment: '#8793b6',
 }
 
 export const EditorSurface = ({
@@ -105,23 +98,21 @@ export const EditorSurface = ({
       }
       const expanded = Layout.expandTabs(line.text)
       line.tokens.forEach((token) => {
-        context.fillStyle = tokenColors[token.kind]
+        context.fillStyle = EditorHighlightingLogic.tokenColors[token.kind]
         const start = Layout.expandTabs(line.text.slice(0, token.start)).length
         const end = Layout.expandTabs(
           line.text.slice(0, token.start + token.text.length),
         ).length
         context.fillText(expanded.slice(start, end), xAt(token.start), y)
       })
-      diagnostics.forEach((diagnostic) => {
-        const start = Math.max(diagnostic.start - line.startOffset, 0)
-        const end = Math.min(
-          diagnostic.start + diagnostic.length - line.startOffset,
-          line.text.length,
-        )
-        if (start > line.text.length || end < start) return
+      EditorHighlightingLogic.lineDiagnostics(
+        line.startOffset,
+        line.text.length,
+        diagnostics,
+      ).forEach(({ start, end }) => {
         const left = xAt(start)
         const right = Math.max(left + 12, xAt(end))
-        context.strokeStyle = '#ff758c'
+        context.strokeStyle = EditorHighlightingLogic.tokenColors.diagnostic
         context.lineWidth = 3
         context.beginPath()
         for (let x = left; x <= right; x += 6) {

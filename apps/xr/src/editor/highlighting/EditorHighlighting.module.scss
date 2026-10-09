@@ -1,0 +1,20 @@
+$colors: (
+  plain: #d9def2,
+  keyword: #c792ea,
+  string: #c3e88d,
+  number: #f78c6c,
+  comment: #8793b6,
+  diagnostic: #ff758c,
+);
+
+:export {
+  @each $kind, $color in $colors {
+    #{$kind}: $color;
+  }
+}
+
+:global(:root) {
+  @each $kind, $color in $colors {
+    --syntax-#{$kind}: #{$color};
+  }
+}

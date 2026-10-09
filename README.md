@@ -14,7 +14,7 @@ The same interface works with a mouse and keyboard or in WebXR. Desktop support 
 - Deterministic 3D file clusters with symbols distributed around their parents and spacing reserved for nested contents
 - Draggable graph nodes with hover, selection, expand/collapse, focus, and back interactions
 - Source locations that open the selected file and symbol
-- A desktop DOM editor dock below the central graph, with a terminal tab
+- A desktop DOM editor dock below the central graph, with shared syntax colors, diagnostic underlines, native text editing, and a terminal tab
 - A VR code editor with measured monospace text, accurate pointer placement, drag/keyboard selection, tab stops, automatic indentation, horizontal/vertical scrolling, undo/redo, save, syntax colors, and visible-line virtualization
 - Live TypeScript/JavaScript syntax diagnostics in a background worker, with error underlines and messages at the hovered location or cursor
 - A true pseudo-terminal with stdout, stderr, stdin, Ctrl+C, resize support, bounded scrollback, and basic ANSI colors/control sequences
@@ -107,7 +107,7 @@ Connected clients receive workspace updates in server order. If a slow connectio
 - Function nodes include declarations, generators, and named variables initialized with arrow functions or function expressions. Exported symbols keep their dotted orange connections.
 - Double-click a node to focus it and its direct relationships.
 - Right-click a node to collapse or expand its contained symbols.
-- In the desktop bottom dock, select Editor to edit source or Terminal to interact with a running program. The native textarea supports selection, scrolling, clipboard, undo/redo, and Ctrl/Cmd+S saving; the header reports syntax diagnostic counts.
+- In the desktop bottom dock, select Editor to edit source or Terminal to interact with a running program. The native textarea supports selection, scrolling, clipboard, undo/redo, and Ctrl/Cmd+S saving; a synchronized highlight layer displays syntax colors and diagnostic underlines, and the header reports syntax diagnostic counts.
 - In VR, select the editor, then type normally. Drag over text or Shift-click to select. Shift+wheel scrolls horizontally; cursor movement reveals long lines automatically. Hover or place the cursor over an error underline to read its message. Use Shift with cursor movement for selection, `Ctrl/Cmd+Z` for undo, and `Ctrl/Cmd+S` to save.
 - In VR, virtual keyboard edits use the spatial editor's cursor and selection. Text composition appears live, including deletion, and remains one undo step. Select the **Keyboard** button (highlighted on hover) in the editor header to open or reopen the VR keyboard. Selecting text or moving the cursor never requests keyboard focus in VR. The headset edits an isolated persistent buffer that is not rewritten between keystrokes or at composition end; edits are applied at the spatial cursor without exposing surrounding source to native selection or composition replacement.
 - Select the terminal before typing into an interactive program. `Ctrl+C` sends the terminal interrupt character.
@@ -124,7 +124,7 @@ pnpm lint
 pnpm build
 ```
 
-The desktop editor is a regular DOM textarea below the graph. The VR editor draws a high-resolution canvas texture inside the 3D scene, including selections, caret, syntax colors, and diagnostics. Text input supports physical keyboards and experimental headset virtual keyboards with IME composition. Quest keyboard behavior still requires validation on the headset. Diagnostics reuse the TypeScript compiler and currently report syntax errors only; they do not load project tsconfig, resolve imports, type-check the project, or apply ESLint rules.
+The desktop editor uses a native DOM textarea over an aria-hidden highlighted layer below the graph. Both layers share font metrics and scroll positions, including after source navigation and resizing. Desktop and VR reuse the tokenizer, syntax palette, and diagnostic range clipping; the lightweight line tokenizer covers common keywords, strings, numbers, and single-line comments, rather than full language parsing. The VR editor draws a high-resolution canvas texture inside the 3D scene, including selections, caret, syntax colors, and diagnostics. Text input supports physical keyboards and experimental headset virtual keyboards with IME composition. Quest keyboard behavior still requires validation on the headset. Diagnostics reuse the TypeScript compiler and currently report syntax errors only; they do not load project tsconfig, resolve imports, type-check the project, or apply ESLint rules.
 
 Monaco and CodeMirror provide DOM-based editor views, which are not drop-in immersive 3D surfaces. A future integration can reuse editor state/commands and language services behind this VR rendering surface.
 

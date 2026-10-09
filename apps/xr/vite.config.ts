@@ -1,3 +1,4 @@
+import type {} from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
@@ -14,6 +15,7 @@ const localCertificate =
 
 export default defineConfig({
   plugins: [react()],
+  test: { css: { include: /EditorHighlighting\.module\.scss/ } },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

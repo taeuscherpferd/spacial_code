@@ -36,21 +36,100 @@
   }
 }
 
-.input {
+.surface {
+  display: grid;
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.input,
+.highlight {
+  grid-area: 1 / 1;
   width: 100%;
-  resize: none;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
   padding: 0.5rem 1rem;
   border: 0;
-  border-top: 1px solid var(--border);
-  outline-color: var(--accent);
-  color: var(--text);
-  background: var(--background);
+  overflow: scroll;
+  white-space: pre;
+  overflow-wrap: normal;
+  text-align: left;
   font:
     13px / 20px ui-monospace,
     SFMono-Regular,
     Consolas,
     monospace;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  letter-spacing: normal;
   tab-size: 2;
+}
+
+.highlight {
+  pointer-events: none;
+  user-select: none;
+  scrollbar-color: transparent transparent;
+
+  &::-webkit-scrollbar,
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+}
+
+.input {
+  resize: none;
+  outline-color: var(--accent);
+  color: transparent;
+  caret-color: var(--text);
+  background: transparent;
+
+  &::selection {
+    color: var(--text);
+    background: var(--accent);
+  }
+}
+
+.line {
+  position: relative;
+}
+
+@each $kind in plain, keyword, string, number, comment {
+  .#{$kind} {
+    color: var(--syntax-#{$kind});
+  }
+}
+
+.diagnostic {
+  text-decoration: underline wavy var(--syntax-diagnostic);
+  text-underline-offset: 3px;
+}
+
+.marker {
+  color: transparent;
+  position: absolute;
+  left: 0;
+  top: 0;
+
+  span {
+    display: inline-block;
+    width: 1ch;
+    border-bottom: 1px solid var(--syntax-diagnostic);
+  }
+}
+
+@media (forced-colors: active) {
+  .highlight {
+    visibility: hidden;
+  }
+
+  .input {
+    color: CanvasText;
+    caret-color: CanvasText;
+  }
 }
