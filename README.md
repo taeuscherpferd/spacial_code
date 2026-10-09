@@ -6,6 +6,8 @@ The same interface works with a mouse and keyboard or in WebXR. Desktop support 
 
 ## What works
 
+- Runtime project selection from the desktop workspace header or VR folder browser, with recent projects and unsaved-edit confirmation
+- A controller-operated VR workspace bar with expandable folders, paginated source files, and project switching
 - Recursive TypeScript workspace discovery with `.gitignore` support and safe, workspace-contained file access
 - Incremental Tree-sitter parsing for files, functions, classes, imports, exports, and call relationships
 - Filesystem watching and live graph updates after in-app or external edits
@@ -56,11 +58,11 @@ pnpm install
 pnpm dev
 ```
 
-Without a local certificate, open `http://127.0.0.1:5174` for desktop development. The server command opens `examples/guessing-game` by default.
+Without a local certificate, open `http://127.0.0.1:5174` for desktop development. The server command initially opens `examples/react-starter`. Select **Choose project** in the workspace bar to browse folders or enter a project path without restarting. Paths refer to the computer running the Rust server, including when the interface runs on a headset.
 
 For trusted local HTTPS from a headset, install [mkcert](https://github.com/FiloSottile/mkcert), run `mkcert -install` once to trust its local CA on this computer, then run `pnpm https:cert` and `pnpm dev`. Open the printed `https://` LAN address on your headset and install the printed `rootCA.pem` certificate as a trusted CA there too. Keep the corresponding private key on your development computer. Both devices must be on the same local network. The app and WebSocket proxy continue to run on your computer. If your LAN address changes, rerun `pnpm https:cert`.
 
-To open another TypeScript project:
+To choose the initial TypeScript project from the command line:
 
 ```bash
 cargo run -p spatial-code-server -- /path/to/project
@@ -90,7 +92,12 @@ Add `.spatial-code/run.json` inside the opened project. Either one object or an 
 
 The command is intentionally generic, so the same process subsystem can later launch Cargo, Python, .NET, Go, test runners, language servers, or debug adapters.
 
+Connected clients receive workspace updates in server order. If a slow connection loses broadcast events, it reconnects automatically and reloads the active workspace.
+
 ## Controls
+
+- In the desktop workspace header, select **Choose project**, navigate folders with **Up**, then select **Open this folder**. You can also browse or open a typed path, or switch back to a recent project. Unsaved editor changes require **Keep draft & open** confirmation. Each client keeps unsaved drafts by project and file, including when another client switches the shared project. Return to the project and reopen the file to restore its draft against the latest saved source. Drafts remain in that client until the page is reloaded. A successful switch stops the previous project’s running process and clears its editor, terminal, graph selection, focus, and layout; a failed open keeps the current project available. The server has one active project shared by all connected clients. Recent projects are remembered until the page is reloaded.
+- In VR, the workspace bar appears to your left. Use controller triggers to expand folders and open files, and **Previous / Next** to page through the list. Select **Choose**, browse server folders, and select **Open folder** to switch projects, or use **Recent**. Press the left controller’s lower face button (X on Quest/Touch) to hide or show the bar; showing it again places it beside your current location and heading. The bar stays anchored independently of graph movement.
 
 - In VR, hold either controller’s grip button and move your hand to move the whole graph, including toward or away from you. Hold both grips and spread your hands apart to enlarge the graph, or bring them together to shrink it (0.1×–10×). Release either grip to continue moving with the other; release both to leave the graph in place. Grips work anywhere, without pointing at a node.
 - VR triggers still select and drag individual nodes. Press the right controller’s lower face button (A on Quest/Touch controllers) to toggle the editor. It starts hidden, appears to your right facing you, and stays anchored there. Toggle it off and on to reposition it beside your current location and heading. Selecting a node updates its source without opening the hidden editor. The editor, terminal, and toolbar do not move with the graph.

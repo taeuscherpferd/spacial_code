@@ -1,3 +1,5 @@
+import { VrWorkspace } from '@/workspace/VrWorkspace/VrWorkspace'
+import type { WorkspaceBrowserControls } from '@/workspace/WorkspaceBrowser/hooks/useWorkspaceBrowser'
 import type {
   GraphNode,
   ProcessState,
@@ -13,6 +15,7 @@ import { useXR, XROrigin } from '@react-three/xr'
 import { useState } from 'react'
 
 interface WorkspaceSceneProps {
+  workspaceControls: WorkspaceBrowserControls
   graph: ProgramGraph
   source: SourceDocument | null
   process: ProcessState
@@ -36,6 +39,7 @@ interface WorkspaceSceneProps {
 }
 
 export const WorkspaceScene = ({
+  workspaceControls,
   graph,
   source,
   process,
@@ -95,6 +99,7 @@ export const WorkspaceScene = ({
         onToggleCollapsed={onToggleCollapsed}
         onFocus={onFocusNode}
       />
+      {session && <VrWorkspace controls={workspaceControls} />}
       {session && (
         <VrEditor
           onInteractionChange={setEditorInteraction}

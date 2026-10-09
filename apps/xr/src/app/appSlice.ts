@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type {
   ConnectionStatus,
+  DirectoryListing,
   ProcessState,
   ProgramGraph,
   RunConfiguration,
@@ -9,6 +10,12 @@ import type {
   WorkspaceSnapshot,
 } from '@/connection/protocol'
 
+interface SourceDraft {
+  workspaceRoot: string
+  path: string
+  content: string
+}
+
 interface AppState {
   connection: ConnectionStatus
   workspace: WorkspaceSnapshot | null
@@ -16,8 +23,12 @@ interface AppState {
   runConfigurations: RunConfiguration[]
   process: ProcessState
   source: SourceDocument | null
+  sourceDrafts: SourceDraft[]
   terminalChunks: string[]
   error: string | null
+  directoryListing: DirectoryListing | null
+  switchingWorkspace: boolean
+  recentWorkspaces: string[]
 }
 
 const initialState: AppState = {
@@ -27,8 +38,24 @@ const initialState: AppState = {
   runConfigurations: [],
   process: { status: 'idle' },
   source: null,
+  sourceDrafts: [],
   terminalChunks: [],
   error: null,
+  directoryListing: null,
+  switchingWorkspace: false,
+  recentWorkspaces: [],
+}
+
+const rememberSourceDraft = (state: AppState): void => {
+  if (!state.workspace || !state.source) return
+  const { root } = state.workspace
+  const { path, content, savedContent } = state.source
+  state.sourceDrafts = state.sourceDrafts.filter(
+    (draft) => draft.workspaceRoot !== root || draft.path !== path,
+  )
+  if (content !== savedContent) {
+    state.sourceDrafts.push({ workspaceRoot: root, path, content })
+  }
 }
 
 const processState = (
@@ -58,13 +85,39 @@ export const appSlice = createSlice({
     terminalCleared(state) {
       state.terminalChunks = []
     },
+    workspaceSwitchRequested(state) {
+      state.switchingWorkspace = true
+      state.error = null
+    },
+    directoriesRequested(state) {
+      state.directoryListing = null
+      state.error = null
+    },
     errorDismissed(state) {
       state.error = null
     },
     eventReceived(state, action: PayloadAction<ServerEvent>) {
       const event = action.payload
       switch (event.type) {
+        case 'directoriesListed':
+          state.directoryListing = event.listing
+          break
         case 'bootstrap':
+          if (state.workspace?.root !== event.workspace.root) {
+            rememberSourceDraft(state)
+            state.source = null
+            state.terminalChunks = []
+            state.process = { status: 'idle' }
+            state.directoryListing = null
+          }
+          state.switchingWorkspace = false
+          state.error = null
+          state.recentWorkspaces = [
+            event.workspace.root,
+            ...state.recentWorkspaces.filter(
+              (root) => root !== event.workspace.root,
+            ),
+          ].slice(0, 8)
           state.workspace = event.workspace
           state.graph = event.graph
           state.runConfigurations = event.runConfigurations
@@ -74,15 +127,24 @@ export const appSlice = createSlice({
           state.workspace = event.workspace
           state.graph = event.graph
           break
-        case 'sourceContent':
+        case 'sourceContent': {
+          rememberSourceDraft(state)
+          const draftIndex = state.sourceDrafts.findIndex(
+            (draft) =>
+              draft.workspaceRoot === state.workspace?.root &&
+              draft.path === event.path,
+          )
+          const draft = state.sourceDrafts[draftIndex]
           state.source = {
             path: event.path,
-            content: event.content,
+            content: draft?.content ?? event.content,
             savedContent: event.content,
             version: event.version,
             savedVersion: event.version,
           }
+          if (draftIndex !== -1) state.sourceDrafts.splice(draftIndex, 1)
           break
+        }
         case 'fileSaved':
           if (state.source?.path === event.path) {
             state.source.savedVersion = event.version
@@ -100,6 +162,7 @@ export const appSlice = createSlice({
           state.process = processState(event)
           break
         case 'error':
+          state.switchingWorkspace = false
           state.error = event.message
           break
       }
@@ -109,6 +172,8 @@ export const appSlice = createSlice({
 
 export const {
   connectionChanged,
+  directoriesRequested,
+  workspaceSwitchRequested,
   errorDismissed,
   eventReceived,
   sourceEdited,

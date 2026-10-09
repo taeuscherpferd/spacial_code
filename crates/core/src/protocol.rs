@@ -1,9 +1,12 @@
 use crate::WorkspaceSnapshot;
+use crate::directories::DirectoryListing;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ClientMessage {
+    OpenWorkspace { path: String },
+    BrowseDirectories { path: String },
     OpenSource { path: String },
     SaveFile { path: String, content: String },
     Refresh,
@@ -12,6 +15,14 @@ pub enum ClientMessage {
     RestartRun { configuration: String },
     TerminalInput { data: String },
     ResizeTerminal { cols: u16, rows: u16 },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClientRequest {
+    #[serde(flatten)]
+    pub message: ClientMessage,
+    pub workspace_root: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -45,6 +56,9 @@ pub enum ProcessState {
     rename_all_fields = "camelCase"
 )]
 pub enum ServerEvent<G> {
+    DirectoriesListed {
+        listing: DirectoryListing,
+    },
     Bootstrap {
         workspace: WorkspaceSnapshot,
         graph: G,

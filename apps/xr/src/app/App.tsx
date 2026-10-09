@@ -6,6 +6,7 @@ import { webSocketClient } from '@/connection/WebSocketClient'
 import { DesktopDock } from '@/app/DesktopDock/DesktopDock'
 import { WorkspaceScene } from '@/scene/WorkspaceScene'
 import { WorkspaceTree } from '@/workspace/WorkspaceTree'
+import { useWorkspaceBrowser } from '@/workspace/WorkspaceBrowser/hooks/useWorkspaceBrowser'
 import { Canvas } from '@react-three/fiber'
 import { createXRStore, XR } from '@react-three/xr'
 import { useEffect, useMemo, useState } from 'react'
@@ -56,8 +57,8 @@ export const App = () => {
 
   useEffect(() => {
     const firstConfiguration = app.runConfigurations?.[0]
-    if (!configuration && firstConfiguration) {
-      setConfiguration(firstConfiguration.name)
+    if (!app.runConfigurations.some((item) => item.name === configuration)) {
+      setConfiguration(firstConfiguration?.name ?? '')
     }
   }, [app.runConfigurations, configuration])
 
@@ -71,6 +72,7 @@ export const App = () => {
   const running = app.process.status === 'running'
 
   const selectNode = (node: GraphNode): void => {
+    if (app.switchingWorkspace) return
     setSelectedNodeId(node.id)
     // External modules have no source file in the workspace.
     if (node.kind !== 'import') {
@@ -80,6 +82,7 @@ export const App = () => {
   }
 
   const openFile = (path: string): void => {
+    if (app.switchingWorkspace) return
     const fileNode = app.graph.nodes.find(
       (node) => node.kind === 'file' && node.path === path,
     )
@@ -90,6 +93,15 @@ export const App = () => {
       webSocketClient.send({ type: 'openSource', path })
     }
   }
+
+  const workspaceControls = useWorkspaceBrowser(openFile)
+
+  useEffect(() => {
+    setSelectedNodeId(null)
+    setCollapsedNodeIds(new Set())
+    setFocusHistory([])
+    setActivePanel(null)
+  }, [app.workspace?.root])
 
   const toggleCollapsed = (id: string): void => {
     setCollapsedNodeIds((current) => {
@@ -114,13 +126,13 @@ export const App = () => {
   }
 
   const save = (content: string): void => {
-    if (app.source) {
+    if (app.source && !app.switchingWorkspace) {
       webSocketClient.send({ type: 'saveFile', path: app.source.path, content })
     }
   }
 
   const run = (): void => {
-    if (!configuration) {
+    if (!configuration || app.switchingWorkspace) {
       return
     }
     dispatch(terminalCleared())
@@ -129,7 +141,7 @@ export const App = () => {
   }
 
   const restart = (): void => {
-    if (!configuration) {
+    if (!configuration || app.switchingWorkspace) {
       return
     }
     dispatch(terminalCleared())
@@ -148,6 +160,8 @@ export const App = () => {
         <Canvas camera={{ position: [0, 0.65, 10.5], fov: 52 }} dpr={[1, 1.6]}>
           <XR store={xrStore}>
             <WorkspaceScene
+              key={app.workspace?.root}
+              workspaceControls={workspaceControls}
               graph={app.graph}
               source={app.source}
               process={app.process}
@@ -269,11 +283,9 @@ export const App = () => {
         </div>
       </header>
 
-      <WorkspaceTree
-        workspace={app.workspace}
-        selectedPath={app.source?.path ?? null}
-        onOpenFile={openFile}
-      />
+      {!immersive && (
+        <WorkspaceTree key={app.workspace?.root} controls={workspaceControls} />
+      )}
 
       <div className={styles.selection}>
         <span>Selected</span>

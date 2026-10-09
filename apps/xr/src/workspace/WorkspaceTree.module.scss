@@ -77,3 +77,56 @@
   font-size: 0.75rem;
   line-height: 1.5;
 }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.actions button {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  color: var(--text);
+  background: var(--panel);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.tree button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.pathForm {
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.pathForm input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
+
+.folderPath,
+.confirmation {
+  overflow-wrap: anywhere;
+  font-size: 0.72rem;
+  color: var(--text-soft);
+}
+
+.entry {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -1,3 +1,4 @@
+pub mod directories;
 pub mod protocol;
 pub mod source;
 pub mod workspace;

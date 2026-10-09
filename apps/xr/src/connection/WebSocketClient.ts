@@ -7,6 +7,7 @@ export class WebSocketClient {
   private reconnectTimer: number | null = null
   private dispatch: AppDispatch | null = null
   private manuallyClosed = false
+  private workspaceRoot: string | null = null
 
   connect(dispatch: AppDispatch): void {
     this.dispatch = dispatch
@@ -25,7 +26,9 @@ export class WebSocketClient {
 
   send(message: ClientMessage): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify(message))
+      this.socket.send(
+        JSON.stringify({ ...message, workspaceRoot: this.workspaceRoot }),
+      )
     }
   }
 
@@ -46,6 +49,7 @@ export class WebSocketClient {
     })
     socket.addEventListener('message', (message: MessageEvent<string>) => {
       const event = JSON.parse(message.data) as ServerEvent
+      if (event.type === 'bootstrap') this.workspaceRoot = event.workspace.root
       this.dispatch?.(eventReceived(event))
     })
     socket.addEventListener('close', () => {

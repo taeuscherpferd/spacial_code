@@ -15,6 +15,12 @@ export interface WorkspaceSnapshot {
   entries: WorkspaceEntry[]
 }
 
+export interface DirectoryListing {
+  path: string
+  parent: string | null
+  directories: { name: string; path: string }[]
+}
+
 export type GraphNodeKind = 'file' | 'function' | 'class' | 'import'
 
 export interface GraphNode {
@@ -64,6 +70,7 @@ export interface SourceDocument {
 }
 
 export type ServerEvent =
+  | { type: 'directoriesListed'; listing: DirectoryListing }
   | {
       type: 'bootstrap'
       workspace: WorkspaceSnapshot
@@ -88,6 +95,8 @@ export type ProcessStatePayload =
   | { failed: { message: string } }
 
 export type ClientMessage =
+  | { type: 'openWorkspace'; path: string }
+  | { type: 'browseDirectories'; path: string }
   | { type: 'openSource'; path: string }
   | { type: 'saveFile'; path: string; content: string }
   | { type: 'refresh' }
