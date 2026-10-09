@@ -115,6 +115,8 @@ Connected clients receive workspace updates in server order. If a slow connectio
 
 ## Verification
 
+Server tests inject filesystem events into the watcher handler to verify project switching and graph refresh deterministically. Production uses the platform's native watcher; these tests do not verify OS notification delivery.
+
 ```bash
 cargo test --workspace
 pnpm test

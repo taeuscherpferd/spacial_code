@@ -1,4 +1,5 @@
 use anyhow::{Result, bail};
+#[cfg(not(test))]
 use notify::{RecursiveMode, Watcher};
 use spatial_code_core::directories::DirectoryListing;
 use spatial_code_core::{ClientMessage, ProcessState, ServerEvent, WorkspaceService};
@@ -18,6 +19,8 @@ pub struct ProjectSession {
     adapter: TypeScriptAdapter,
     processes: ProcessManager,
     watcher: Option<JoinHandle<()>>,
+    #[cfg(test)]
+    watcher_changes: Option<mpsc::UnboundedSender<notify::Result<notify::Event>>>,
     generation: u64,
     version: u64,
     active_run: Option<u64>,
@@ -32,6 +35,8 @@ impl ProjectSession {
             adapter: TypeScriptAdapter::new()?,
             processes,
             watcher: None,
+            #[cfg(test)]
+            watcher_changes: None,
             generation,
             version: 1,
             active_run: None,
@@ -91,7 +96,7 @@ impl AppState {
             events,
         };
         let mut session = state.session.lock().await;
-        session.watcher = Some(start_watcher(&state, &session)?);
+        session.watcher = Some(start_watcher(&state, &mut session)?);
         drop(session);
         Ok(state)
     }
@@ -127,7 +132,7 @@ impl AppState {
                     return Ok(None);
                 }
                 let bootstrap = next.bootstrap()?;
-                next.watcher = Some(start_watcher(self, &next)?);
+                next.watcher = Some(start_watcher(self, &mut next)?);
                 session.processes.stop()?;
                 *session = next;
                 let _ = self.events.send(bootstrap);
@@ -202,15 +207,24 @@ impl AppState {
     }
 }
 
-fn start_watcher(state: &AppState, session: &ProjectSession) -> Result<JoinHandle<()>> {
+fn start_watcher(state: &AppState, session: &mut ProjectSession) -> Result<JoinHandle<()>> {
     let (changes, mut changed) = mpsc::unbounded_channel();
-    let mut watcher = notify::recommended_watcher(move |event| {
-        let _ = changes.send(event);
-    })?;
-    watcher.watch(session.workspace.root(), RecursiveMode::Recursive)?;
+    #[cfg(not(test))]
+    let watcher = {
+        let mut watcher = notify::recommended_watcher(move |event| {
+            let _ = changes.send(event);
+        })?;
+        watcher.watch(session.workspace.root(), RecursiveMode::Recursive)?;
+        watcher
+    };
+    #[cfg(test)]
+    {
+        session.watcher_changes = Some(changes);
+    }
     let generation = session.generation;
     let state = state.clone();
     Ok(tokio::spawn(async move {
+        #[cfg(not(test))]
         let _watcher = watcher;
         while let Some(event) = changed.recv().await {
             let should_refresh = event.is_ok_and(|event| {

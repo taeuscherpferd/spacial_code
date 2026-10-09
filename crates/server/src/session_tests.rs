@@ -190,10 +190,22 @@ async fn replacement_watcher_refreshes_new_project() {
         "export function updated() {}",
     )
     .unwrap();
+    state
+        .session
+        .lock()
+        .await
+        .watcher_changes
+        .as_ref()
+        .expect("replacement session has no watcher")
+        .send(Ok(notify::Event::new(notify::EventKind::Modify(
+            notify::event::ModifyKind::Data(notify::event::DataChange::Content),
+        ))
+        .add_path(fixture.0.join("second/main.ts"))))
+        .unwrap();
     let event = tokio::time::timeout(Duration::from_secs(3), events.recv())
         .await
-        .unwrap()
-        .unwrap();
+        .expect("replacement watcher did not refresh the workspace")
+        .expect("workspace event channel closed");
     let SpatialEvent::WorkspaceChanged { workspace, graph } = event else {
         panic!("expected refresh")
     };
