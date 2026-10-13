@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+serde_json.workspace = true
 spatial-code-core.workspace = true
 spatial-code-graph.workspace = true
 tree-sitter.workspace = true

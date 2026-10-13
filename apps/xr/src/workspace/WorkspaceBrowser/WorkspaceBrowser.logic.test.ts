@@ -45,6 +45,39 @@ describe('WorkspaceBrowserLogic', () => {
     expect(WorkspaceBrowserLogic.label(expanded[0])).toBe('▾ src')
     expect(WorkspaceBrowserLogic.label(expanded[2])).toBe('    ◇ main.ts')
   })
+  it('cleans pasted paths', () => {
+    expect(WorkspaceBrowserLogic.cleanPath('  "D:\\projects\\app" ')).toBe(
+      'D:\\projects\\app',
+    )
+    expect(WorkspaceBrowserLogic.cleanPath("'/home/me'")).toBe('/home/me')
+    expect(WorkspaceBrowserLogic.cleanPath('"unbalanced')).toBe('"unbalanced')
+    expect(WorkspaceBrowserLogic.cleanPath('  ')).toBe('')
+  })
+  it('offers the parent folder, or other drives at a drive root, before subfolders', () => {
+    const roots = [
+      { name: 'C:\\', path: 'C:\\' },
+      { name: 'D:\\', path: 'D:\\' },
+    ]
+    const src = { name: 'src', path: 'D:\\app\\src' }
+    const nested = WorkspaceBrowserLogic.folderRows({
+      path: 'D:\\app',
+      parent: 'D:\\',
+      directories: [src],
+      roots,
+    })
+    expect(nested).toEqual([
+      { name: '..', path: 'D:\\', kind: 'parent' },
+      { ...src, kind: 'folder' },
+    ])
+    expect(WorkspaceBrowserLogic.folderLabel(nested[1])).toBe('▸ src')
+    const driveRoot = WorkspaceBrowserLogic.folderRows({
+      path: 'D:\\',
+      parent: null,
+      directories: [],
+      roots,
+    })
+    expect(driveRoot).toEqual([{ name: 'C:\\', path: 'C:\\', kind: 'drive' }])
+  })
   it('toggles expansion without changing the original set', () => {
     const original = new Set(['src'])
     expect(WorkspaceBrowserLogic.toggle(original, 'src').size).toBe(0)

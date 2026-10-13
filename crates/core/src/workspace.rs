@@ -1,4 +1,5 @@
-use crate::SourceFile;
+use crate::directories::canonical_path;
+use crate::source::{SKIPPED_DIRECTORIES, SourceFile, is_project_config_path, is_source_path};
 use anyhow::{Context, Result, bail};
 use ignore::WalkBuilder;
 use serde::{Deserialize, Serialize};
@@ -36,9 +37,7 @@ pub struct WorkspaceService {
 
 impl WorkspaceService {
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
-        let root = path
-            .as_ref()
-            .canonicalize()
+        let root = canonical_path(path.as_ref())
             .with_context(|| format!("workspace does not exist: {}", path.as_ref().display()))?;
         if !root.is_dir() {
             bail!("workspace must be a directory: {}", root.display());
@@ -68,34 +67,40 @@ impl WorkspaceService {
         })
     }
 
+    /// Code and stylesheets, sorted by path.
     pub fn source_files(&self) -> Result<Vec<SourceFile>> {
+        self.collect_files(|path| is_source_path(path))
+    }
+
+    /// Every tsconfig/jsconfig in the workspace, for resolving import aliases.
+    pub fn project_configs(&self) -> Result<Vec<SourceFile>> {
+        self.collect_files(|path| is_project_config_path(path))
+    }
+
+    fn collect_files(&self, keep: impl Fn(&Path) -> bool) -> Result<Vec<SourceFile>> {
         let mut files = WalkBuilder::new(&self.root)
             .hidden(false)
             .git_ignore(true)
             .filter_entry(|entry| {
-                !matches!(
-                    entry.file_name().to_str(),
-                    Some("node_modules" | "dist" | "target")
-                )
+                entry
+                    .file_name()
+                    .to_str()
+                    .is_none_or(|name| !SKIPPED_DIRECTORIES.contains(&name))
             })
             .build()
             .filter_map(Result::ok)
             .filter(|entry| entry.file_type().is_some_and(|kind| kind.is_file()))
-            .filter(|entry| {
-                entry
-                    .path()
-                    .extension()
-                    .is_some_and(|extension| extension == "ts" || extension == "tsx")
-            })
+            .filter(|entry| keep(entry.path()))
             .map(|entry| {
                 let absolute_path = entry.path().to_path_buf();
                 let relative_path = self.relative_string(&absolute_path)?;
-                let content = fs::read_to_string(&absolute_path)
+                // Lossy, so one oddly encoded stylesheet can't take down the whole graph.
+                let bytes = fs::read(&absolute_path)
                     .with_context(|| format!("could not read {}", absolute_path.display()))?;
                 Ok(SourceFile {
                     absolute_path,
                     relative_path,
-                    content,
+                    content: String::from_utf8_lossy(&bytes).into_owned(),
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -110,11 +115,8 @@ impl WorkspaceService {
 
     pub fn write_file(&self, relative_path: &str, content: &str) -> Result<()> {
         let path = self.resolve_safe_path(relative_path)?;
-        if path
-            .extension()
-            .is_none_or(|extension| extension != "ts" && extension != "tsx")
-        {
-            bail!("V1 only edits TypeScript files");
+        if !is_source_path(&path) {
+            bail!("only script and stylesheet files can be edited");
         }
         fs::write(&path, content).with_context(|| format!("could not write {}", path.display()))
     }

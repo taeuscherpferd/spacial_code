@@ -19,9 +19,12 @@ export interface DirectoryListing {
   path: string
   parent: string | null
   directories: { name: string; path: string }[]
+  /** Filesystem roots (drives on Windows), so browsing can leave the current drive. */
+  roots: { name: string; path: string }[]
 }
 
-export type GraphNodeKind = 'file' | 'function' | 'class' | 'import'
+/** `import` is a package or builtin; `asset` a workspace file that isn't analysed. */
+export type GraphNodeKind = 'file' | 'function' | 'class' | 'import' | 'asset'
 
 export interface GraphNode {
   id: string

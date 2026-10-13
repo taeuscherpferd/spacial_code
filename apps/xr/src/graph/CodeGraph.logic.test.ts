@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { ProgramGraph } from '@/connection/protocol'
-import { CodeGraphLogic } from '@/graph/CodeGraph.logic'
+import {
+  CodeGraphLogic,
+  nodeColors,
+  stylesheetColor,
+} from '@/graph/CodeGraph.logic'
 
 const graph: ProgramGraph = {
   nodes: [
@@ -64,6 +68,24 @@ describe('CodeGraphLogic', () => {
 
   it('skips arrow heads when nodes overlap', () => {
     expect(CodeGraphLogic.arrowHead([0, 0, 0], [0.1, 0, 0], 0.25)).toBeNull()
+  })
+
+  it('only opens source for nodes inside analysed files', () => {
+    expect(CodeGraphLogic.hasSource('file')).toBe(true)
+    expect(CodeGraphLogic.hasSource('function')).toBe(true)
+    expect(CodeGraphLogic.hasSource('import')).toBe(false)
+    expect(CodeGraphLogic.hasSource('asset')).toBe(false)
+  })
+
+  it('colours stylesheets a lighter blue than scripts', () => {
+    const file = (path: string) =>
+      CodeGraphLogic.nodeColor({ kind: 'file', path })
+    expect(file('src/App.tsx')).toBe(nodeColors.file)
+    expect(file('src/App.module.scss')).toBe(stylesheetColor)
+    expect(file('src/reset.css')).toBe(stylesheetColor)
+    expect(
+      CodeGraphLogic.nodeColor({ kind: 'function', path: 'src/theme.scss' }),
+    ).toBe(nodeColors.function)
   })
 
   describe('edge scoping', () => {

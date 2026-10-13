@@ -1,4 +1,5 @@
 use super::*;
+use spatial_code_core::directories::canonical_path;
 use std::{
     fs,
     path::PathBuf,
@@ -23,7 +24,7 @@ impl Projects {
         fs::write(root.join("second/main.ts"), "export function second() {}").unwrap();
         fs::create_dir_all(root.join("invalid/.spatial-code")).unwrap();
         fs::write(root.join("invalid/.spatial-code/run.json"), "invalid json").unwrap();
-        Self(root.canonicalize().unwrap())
+        Self(canonical_path(&root).unwrap())
     }
 
     fn path(&self, name: &str) -> String {

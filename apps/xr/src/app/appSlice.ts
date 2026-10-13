@@ -89,8 +89,8 @@ export const appSlice = createSlice({
       state.switchingWorkspace = true
       state.error = null
     },
+    // The current listing stays until the next arrives, so a mistyped path keeps your place.
     directoriesRequested(state) {
-      state.directoryListing = null
       state.error = null
     },
     errorDismissed(state) {
@@ -101,6 +101,7 @@ export const appSlice = createSlice({
       switch (event.type) {
         case 'directoriesListed':
           state.directoryListing = event.listing
+          state.error = null
           break
         case 'bootstrap':
           if (state.workspace?.root !== event.workspace.root) {

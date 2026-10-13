@@ -2,6 +2,7 @@ import styles from '@/app/App.module.scss'
 import { errorDismissed, sourceEdited, terminalCleared } from '@/app/appSlice'
 import { useAppDispatch, useAppSelector } from '@/app/hooks'
 import type { GraphNode } from '@/connection/protocol'
+import { CodeGraphLogic } from '@/graph/CodeGraph.logic'
 import { webSocketClient } from '@/connection/WebSocketClient'
 import { DesktopDock } from '@/app/DesktopDock/DesktopDock'
 import { WorkspaceScene } from '@/scene/WorkspaceScene'
@@ -74,8 +75,8 @@ export const App = () => {
   const selectNode = (node: GraphNode): void => {
     if (app.switchingWorkspace) return
     setSelectedNodeId(node.id)
-    // External modules have no source file in the workspace.
-    if (node.kind !== 'import') {
+    // External modules and assets have no source file to open.
+    if (CodeGraphLogic.hasSource(node.kind)) {
       setActivePanel('editor')
       webSocketClient.send({ type: 'openSource', path: node.path })
     }

@@ -6,7 +6,10 @@ pub enum GraphNodeKind {
     File,
     Function,
     Class,
+    /// A package or builtin from outside the workspace.
     Import,
+    /// A workspace file that isn't analysed, such as an imported image or JSON file.
+    Asset,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

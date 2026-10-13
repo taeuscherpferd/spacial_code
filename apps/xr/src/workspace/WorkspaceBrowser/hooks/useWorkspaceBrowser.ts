@@ -26,18 +26,22 @@ export const useWorkspaceBrowser = (onOpenFile: (path: string) => void) => {
     setBrowsing(true)
     setPage(0)
     dispatch(directoriesRequested())
-    webSocketClient.send({ type: 'browseDirectories', path })
+    webSocketClient.send({
+      type: 'browseDirectories',
+      path: WorkspaceBrowserLogic.cleanPath(path),
+    })
   }
 
   const open = (path: string): void => {
-    if (disabled || !path.trim()) return
+    const cleaned = WorkspaceBrowserLogic.cleanPath(path)
+    if (disabled || !cleaned) return
     setPendingPath(null)
     dispatch(workspaceSwitchRequested())
-    webSocketClient.send({ type: 'openWorkspace', path: path.trim() })
+    webSocketClient.send({ type: 'openWorkspace', path: cleaned })
   }
 
   const requestOpen = (path: string): void => {
-    if (disabled || !path.trim()) return
+    if (disabled || !WorkspaceBrowserLogic.cleanPath(path)) return
     if (
       app.source &&
       app.source.content !== app.source.savedContent &&

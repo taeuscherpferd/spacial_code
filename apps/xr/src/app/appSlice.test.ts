@@ -47,7 +47,7 @@ describe('workspace switching state', () => {
       state,
       eventReceived({
         type: 'directoriesListed',
-        listing: { path: '/first', parent: '/', directories: [] },
+        listing: { path: '/first', parent: '/', directories: [], roots: [] },
       }),
     )
     state = appSlice.reducer(state, workspaceSwitchRequested())
@@ -148,16 +148,29 @@ describe('workspace switching state', () => {
     expect(state.source?.content).toBe('unsaved')
     expect(state.recentWorkspaces).toEqual(['/first'])
   })
-  it('clears stale folder listings when browsing and keeps recent projects bounded', () => {
+  it('keeps the folder listing when browsing fails and keeps recent projects bounded', () => {
+    const listing = {
+      path: '/first',
+      parent: '/',
+      directories: [],
+      roots: [{ name: '/', path: '/' }],
+    }
     let state = appSlice.reducer(
       initial(),
-      eventReceived({
-        type: 'directoriesListed',
-        listing: { path: '/first', parent: '/', directories: [] },
-      }),
+      eventReceived({ type: 'directoriesListed', listing }),
     )
     state = appSlice.reducer(state, directoriesRequested())
-    expect(state.directoryListing).toBeNull()
+    state = appSlice.reducer(
+      state,
+      eventReceived({ type: 'error', message: 'folder does not exist' }),
+    )
+    expect(state.directoryListing).toEqual(listing)
+    expect(state.error).toBe('folder does not exist')
+    state = appSlice.reducer(
+      state,
+      eventReceived({ type: 'directoriesListed', listing }),
+    )
+    expect(state.error).toBeNull()
     for (let index = 0; index < 10; index += 1)
       state = appSlice.reducer(
         state,

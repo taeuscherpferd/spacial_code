@@ -1,4 +1,4 @@
-import type { WorkspaceEntry } from '@/connection/protocol'
+import type { DirectoryListing, WorkspaceEntry } from '@/connection/protocol'
 import { Euler, Quaternion, Vector3 } from 'three'
 
 export interface WorkspaceRow {
@@ -9,7 +9,33 @@ export interface WorkspaceRow {
   depth: number
 }
 
+export interface FolderRow {
+  name: string
+  path: string
+  kind: 'parent' | 'drive' | 'folder'
+}
+
 export class WorkspaceBrowserLogic {
+  /** The folder picker's rows: `..`, or the other drives at a drive root, then subfolders. */
+  static folderRows(listing: DirectoryListing): FolderRow[] {
+    const up: FolderRow[] = listing.parent
+      ? [{ name: '..', path: listing.parent, kind: 'parent' }]
+      : listing.roots
+          .filter((root) => root.path !== listing.path)
+          .map((root) => ({ ...root, kind: 'drive' }))
+    return [
+      ...up,
+      ...listing.directories.map((directory) => ({
+        ...directory,
+        kind: 'folder' as const,
+      })),
+    ]
+  }
+
+  static folderLabel(row: FolderRow): string {
+    return `${row.kind === 'drive' ? '◆' : row.kind === 'parent' ? '↰' : '▸'} ${row.name}`
+  }
+
   static rows(
     entries: WorkspaceEntry[],
     expanded: ReadonlySet<string>,
@@ -39,6 +65,12 @@ export class WorkspaceBrowserLogic {
         count + (entry.kind === 'file' ? 1 : this.countFiles(entry.children)),
       0,
     )
+  }
+
+  /** Trims a typed path and drops the quotes Explorer's "Copy as path" adds. */
+  static cleanPath(path: string): string {
+    const trimmed = path.trim()
+    return /^(["']).*\1$/.test(trimmed) ? trimmed.slice(1, -1).trim() : trimmed
   }
 
   static toggle(expanded: ReadonlySet<string>, path: string): Set<string> {

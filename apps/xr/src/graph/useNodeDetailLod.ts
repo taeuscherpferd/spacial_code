@@ -1,10 +1,13 @@
 import { useFrame } from '@react-three/fiber'
 import { useRef, useState, type RefObject } from 'react'
 import { Frustum, Matrix4, Vector3, type Group } from 'three'
+import type { GraphNode } from '@/connection/protocol'
 import type { Position3 } from '@/graph/CodeGraph.logic'
 
 /** Nodes farther than this (in graph-local units) stay at low detail regardless of frustum. */
-const maxDetailDistance = 6
+const maxDetailDistance = 10
+/** Each detailed node is a full mesh plus troika text, so only the nearest few get one. */
+const maxDetailedNodes = 60
 const updateIntervalMs = 150
 
 const setsEqual = (
@@ -24,12 +27,13 @@ const setsEqual = (
 
 /**
  * Picks which nodes are worth the full mesh + billboard + text treatment: anything in
- * `alwaysDetailed` (selection, focus), plus nodes that are both close to the camera and
- * inside its view frustum. Recomputed on a timer rather than every frame since it only
+ * `alwaysDetailed` (selection, focus), plus the nearest `maxDetailedNodes` shown nodes
+ * that are both close to the camera and inside its view frustum. Recomputed on a timer rather than every frame since it only
  * needs to track camera movement, not render smoothly.
  */
 export const useNodeDetailLod = (
   groupRef: RefObject<Group | null>,
+  nodes: readonly GraphNode[],
   positions: ReadonlyMap<string, Position3>,
   alwaysDetailed: ReadonlySet<string>,
 ): ReadonlySet<string> => {
@@ -60,23 +64,30 @@ export const useNodeDetailLod = (
     camera.getWorldPosition(cameraLocal.current)
     group.worldToLocal(cameraLocal.current)
 
-    const next = new Set<string>(alwaysDetailed)
     const maxDistanceSq = maxDetailDistance * maxDetailDistance
-    for (const [id, position] of positions) {
-      if (next.has(id)) {
+    const candidates: { id: string; distanceSq: number }[] = []
+    for (const node of nodes) {
+      const position = positions.get(node.id)
+      if (!position || alwaysDetailed.has(node.id)) {
         continue
       }
       const dx = position[0] - cameraLocal.current.x
       const dy = position[1] - cameraLocal.current.y
       const dz = position[2] - cameraLocal.current.z
-      if (dx * dx + dy * dy + dz * dz > maxDistanceSq) {
+      const distanceSq = dx * dx + dy * dy + dz * dz
+      if (distanceSq > maxDistanceSq) {
         continue
       }
       scratch.current.set(position[0], position[1], position[2])
       group.localToWorld(scratch.current)
       if (frustum.current.containsPoint(scratch.current)) {
-        next.add(id)
+        candidates.push({ id: node.id, distanceSq })
       }
+    }
+    candidates.sort((left, right) => left.distanceSq - right.distanceSq)
+    const next = new Set<string>(alwaysDetailed)
+    for (const { id } of candidates.slice(0, maxDetailedNodes)) {
+      next.add(id)
     }
 
     if (!setsEqual(detailed, next)) {

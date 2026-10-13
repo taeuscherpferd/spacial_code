@@ -41,9 +41,26 @@ export const nodeColors: Record<GraphNodeKind, string> = {
   function: '#7c4dff',
   class: '#d652df',
   import: '#00a895',
+  asset: '#8a94a6',
 }
 
+/** A lighter `file` blue, so stylesheets stand out from the scripts that import them. */
+export const stylesheetColor = '#6f9bff'
+
+const stylesheetPattern = /\.(css|scss|sass|less)$/i
+
 export class CodeGraphLogic {
+  static nodeColor(node: Pick<GraphNode, 'kind' | 'path'>): string {
+    return node.kind === 'file' && stylesheetPattern.test(node.path)
+      ? stylesheetColor
+      : nodeColors[node.kind]
+  }
+
+  /** Modules and assets have no source file in the workspace to open or scope to. */
+  static hasSource(kind: GraphNodeKind): boolean {
+    return kind !== 'import' && kind !== 'asset'
+  }
+
   static nodeRadius(kind: GraphNodeKind): number {
     return kind === 'file' ? 0.2 : 0.13
   }
@@ -147,9 +164,9 @@ export class CodeGraphLogic {
     selected: GraphNode | null,
     options: ScopeOptions = defaultScopeOptions,
   ): VisibleGraph {
-    // Modules have no path of their own, so selecting one scopes to no file.
+    // Modules and assets have no path of their own, so selecting one scopes to no file.
     const selectedPath =
-      selected && selected.kind !== 'import' ? selected.path : null
+      selected && this.hasSource(selected.kind) ? selected.path : null
     const nodes = new Map(visible.nodes.map((node) => [node.id, node]))
     const parents = new Map(
       visible.edges
@@ -173,7 +190,7 @@ export class CodeGraphLogic {
       selectedPath !== null && nodes.get(id)?.path === selectedPath
     for (const node of visible.nodes) {
       const shownModule =
-        node.kind === 'import' &&
+        !this.hasSource(node.kind) &&
         (options.showModules || node.id === selected?.id)
       if (node.kind === 'file' || inSelected(node.id) || shownModule) {
         keep(node.id)

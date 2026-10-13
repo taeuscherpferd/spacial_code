@@ -3,11 +3,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
 import { Plane, Vector3, type Group } from 'three'
 import type { GraphNode } from '@/connection/protocol'
-import {
-  CodeGraphLogic,
-  nodeColors,
-  type Position3,
-} from '@/graph/CodeGraph.logic'
+import { CodeGraphLogic, type Position3 } from '@/graph/CodeGraph.logic'
 
 interface GraphNodeViewProps {
   node: GraphNode
@@ -37,7 +33,7 @@ export const GraphNodeView = ({
 }: GraphNodeViewProps) => {
   const [hovered, setHovered] = useState(false)
   const radius = CodeGraphLogic.nodeRadius(node.kind)
-  const color = nodeColors[node.kind]
+  const color = CodeGraphLogic.nodeColor(node)
   const label =
     node.kind === 'import'
       ? `import ${node.detail?.split('/').at(-1) ?? ''}`

@@ -2,7 +2,10 @@ use anyhow::{Result, bail};
 #[cfg(not(test))]
 use notify::{RecursiveMode, Watcher};
 use spatial_code_core::directories::DirectoryListing;
-use spatial_code_core::{ClientMessage, ProcessState, ServerEvent, WorkspaceService};
+use spatial_code_core::{
+    ClientMessage, ProcessState, ServerEvent, WorkspaceService, is_in_skipped_directory,
+    is_project_config_path, is_source_path,
+};
 use spatial_code_graph::ProgramGraph;
 use spatial_code_processes::ProcessManager;
 use spatial_code_terminal::TerminalEvent;
@@ -46,9 +49,15 @@ impl ProjectSession {
     pub fn bootstrap(&mut self) -> Result<SpatialEvent> {
         Ok(SpatialEvent::Bootstrap {
             workspace: self.workspace.snapshot()?,
-            graph: self.adapter.analyze(&self.workspace.source_files()?)?,
+            graph: self.analyze()?,
             run_configurations: self.processes.configurations().to_vec(),
         })
+    }
+
+    fn analyze(&mut self) -> Result<ProgramGraph> {
+        // Reloaded every time so edits to tsconfig `paths` take effect on the next refresh.
+        self.adapter.configure(&self.workspace.project_configs()?);
+        self.adapter.analyze(&self.workspace.source_files()?)
     }
 
     pub fn is_running(&self) -> bool {
@@ -66,7 +75,7 @@ impl ProjectSession {
 
     fn refresh(&mut self, events: &broadcast::Sender<SpatialEvent>) -> Result<()> {
         let workspace = self.workspace.snapshot()?;
-        let graph = self.adapter.analyze(&self.workspace.source_files()?)?;
+        let graph = self.analyze()?;
         self.version += 1;
         let _ = events.send(SpatialEvent::WorkspaceChanged { workspace, graph });
         Ok(())
@@ -222,16 +231,21 @@ fn start_watcher(state: &AppState, session: &mut ProjectSession) -> Result<JoinH
         session.watcher_changes = Some(changes);
     }
     let generation = session.generation;
+    let root = session.workspace.root().to_path_buf();
     let state = state.clone();
     Ok(tokio::spawn(async move {
         #[cfg(not(test))]
         let _watcher = watcher;
         while let Some(event) = changed.recv().await {
             let should_refresh = event.is_ok_and(|event| {
-                event.paths.iter().any(|path| {
-                    path.extension()
-                        .is_some_and(|extension| extension == "ts" || extension == "tsx")
-                })
+                event
+                    .paths
+                    .iter()
+                    .filter(|path| {
+                        // `npm install` touches thousands of scripts and configs here.
+                        !is_in_skipped_directory(path.strip_prefix(&root).unwrap_or(path))
+                    })
+                    .any(|path| is_source_path(path) || is_project_config_path(path))
             });
             if !should_refresh {
                 continue;

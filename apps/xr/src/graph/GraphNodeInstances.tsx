@@ -2,11 +2,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import { Color, InstancedMesh, Object3D } from 'three'
 import type { GraphNode } from '@/connection/protocol'
-import {
-  CodeGraphLogic,
-  nodeColors,
-  type Position3,
-} from '@/graph/CodeGraph.logic'
+import { CodeGraphLogic, type Position3 } from '@/graph/CodeGraph.logic'
 
 interface GraphNodeInstancesProps {
   nodes: readonly GraphNode[]
@@ -53,14 +49,24 @@ export const GraphNodeInstances = ({
       dummy.scale.setScalar(radius)
       dummy.updateMatrix()
       mesh.setMatrixAt(index, dummy.matrix)
-      mesh.setColorAt(index, color.set(nodeColors[node.kind]))
     })
     mesh.count = placedNodes.length
     mesh.instanceMatrix.needsUpdate = true
+  }, [placedNodes, positions, detailedIds])
+
+  // Colours only change with the node list, not with every detail-level update.
+  useLayoutEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) {
+      return
+    }
+    placedNodes.forEach((node, index) => {
+      mesh.setColorAt(index, color.set(CodeGraphLogic.nodeColor(node)))
+    })
     if (mesh.instanceColor) {
       mesh.instanceColor.needsUpdate = true
     }
-  }, [placedNodes, positions, detailedIds])
+  }, [placedNodes])
 
   const handleClick = (event: ThreeEvent<MouseEvent>): void => {
     event.stopPropagation()

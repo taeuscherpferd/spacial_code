@@ -46,9 +46,12 @@ export const VrWorkspace = ({ controls }: VrWorkspaceProps) => {
         directory: false,
       }))
     : controls.browsing
-      ? (controls.listing?.directories ?? []).map((entry) => ({
-          ...entry,
-          label: `▸ ${entry.name}`,
+      ? (controls.listing
+          ? WorkspaceBrowserLogic.folderRows(controls.listing)
+          : []
+        ).map((row) => ({
+          ...row,
+          label: WorkspaceBrowserLogic.folderLabel(row),
           directory: true,
         }))
       : controls.rows.map((row) => ({
@@ -136,28 +139,16 @@ export const VrWorkspace = ({ controls }: VrWorkspaceProps) => {
                   : (controls.workspace?.root ?? 'Connecting…'))}
           </Text>
           {controls.browsing && !recent && (
-            <>
-              <group position={[-0.94, 0.68, 0]}>
-                <EditorButton
-                  label="Up"
-                  disabled={controls.disabled || !controls.listing?.parent}
-                  onPress={() =>
-                    controls.listing?.parent &&
-                    controls.browse(controls.listing.parent)
-                  }
-                />
-              </group>
-              <group position={[0, 0.68, 0]}>
-                <EditorButton
-                  label="Open folder"
-                  disabled={controls.disabled || !controls.listing}
-                  onPress={() =>
-                    controls.listing &&
-                    controls.requestOpen(controls.listing.path)
-                  }
-                />
-              </group>
-            </>
+            <group position={[-0.94, 0.68, 0]}>
+              <EditorButton
+                label="Open folder"
+                disabled={controls.disabled || !controls.listing}
+                onPress={() =>
+                  controls.listing &&
+                  controls.requestOpen(controls.listing.path)
+                }
+              />
+            </group>
           )}
           {page.rows.map((row, index) => (
             <group key={row.path} position={[0, 0.36 - index * 0.25, 0]}>
