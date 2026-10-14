@@ -14,6 +14,7 @@ import { EditorButton } from '@/editor/EditorButton/EditorButton'
 import { EditorSurface } from '@/editor/EditorSurface/EditorSurface'
 import { useEditorInput } from '@/editor/hooks/useEditorInput'
 import { useEditorDiagnostics } from '@/editor/hooks/useEditorDiagnostics'
+import { useThumbstickScroll } from '@/scene/hooks/useThumbstickScroll'
 
 interface CodeEditorProps {
   document: SourceDocument | null
@@ -96,10 +97,17 @@ export const CodeEditor = ({
     state.text,
   )
 
+  const thumbstick = useThumbstickScroll((steps) =>
+    setState((current) =>
+      CodeEditorLogic.scroll(current, steps, visibleLineCount),
+    ),
+  )
+
   const dirty = document ? state.text !== document.savedContent : false
 
   return (
     <group
+      {...thumbstick}
       onPointerOver={() => onInteractionChange(true)}
       onPointerOut={() => onInteractionChange(false)}
       onPointerDown={(event) => {

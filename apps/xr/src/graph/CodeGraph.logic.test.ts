@@ -41,7 +41,7 @@ const graph: ProgramGraph = {
 
 describe('CodeGraphLogic', () => {
   it('lays out symbols to the right of their files', () => {
-    const layout = CodeGraphLogic.layout(graph)
+    const layout = CodeGraphLogic.layout(graph).positions
     expect(layout.get('function:main')?.[0]).toBeGreaterThan(
       layout.get('file:index')?.[0] ?? 0,
     )
@@ -54,7 +54,7 @@ describe('CodeGraphLogic', () => {
 
   it('merges persisted drag positions', () => {
     const merged = CodeGraphLogic.mergePositions(
-      CodeGraphLogic.layout(graph),
+      CodeGraphLogic.layout(graph).positions,
       new Map([['file:index', [3, 2, 1] as [number, number, number]]]),
     )
     expect(merged.get('file:index')).toEqual([3, 2, 1])
@@ -68,6 +68,13 @@ describe('CodeGraphLogic', () => {
 
   it('skips arrow heads when nodes overlap', () => {
     expect(CodeGraphLogic.arrowHead([0, 0, 0], [0.1, 0, 0], 0.25)).toBeNull()
+  })
+
+  it('allows more wobble before dragging nodes that are further away', () => {
+    expect(CodeGraphLogic.isDrag(0.04, 0.3)).toBe(false)
+    expect(CodeGraphLogic.isDrag(0.06, 0.3)).toBe(true)
+    expect(CodeGraphLogic.isDrag(0.15, 3)).toBe(false)
+    expect(CodeGraphLogic.isDrag(0.25, 3)).toBe(true)
   })
 
   it('only opens source for nodes inside analysed files', () => {

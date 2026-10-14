@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { Vector3 } from 'three'
-import { GraphManipulationLogic as Logic } from '@/graph/GraphManipulation/GraphManipulation.logic'
+import type { GraphNode } from '@/connection/protocol'
+import {
+  GraphManipulationLogic as Logic,
+  maxGraphScale,
+  minGraphScale,
+} from '@/graph/GraphManipulation/GraphManipulation.logic'
 
 const left = {}
 const right = {}
@@ -53,10 +58,10 @@ describe('GraphManipulation', () => {
   it('bounds scaling and handles coincident controllers safely', () => {
     const gesture = Logic.begin([grip(left, -1), grip(right, 1)], transform)
     expect(Logic.update(gesture, [grip(left, 0), grip(right, 100)]).scale).toBe(
-      10,
+      maxGraphScale,
     )
     expect(Logic.update(gesture, [grip(left, 0), grip(right, 0)]).scale).toBe(
-      0.1,
+      minGraphScale,
     )
     const coincident = Logic.begin(
       [grip(left, 0), grip(right, 0.001)],
@@ -66,5 +71,26 @@ describe('GraphManipulation', () => {
       Logic.update(coincident, [grip(left, 0), grip(right, 1)]).scale,
     ).toBe(1)
     expect(Logic.center([]).toArray()).toEqual([0, 0, 0])
+  })
+
+  it('finds the node whose surface is nearest, within reach', () => {
+    const nodes = [
+      { id: 'file', kind: 'file' },
+      { id: 'symbol', kind: 'function' },
+    ] as GraphNode[]
+    const positions = new Map<string, [number, number, number]>([
+      ['file', [0, 0, 0]],
+      ['symbol', [0.5, 0, 0]],
+    ])
+    // 0.25 from both centres, but the file sphere is larger, so its surface is closer.
+    expect(
+      Logic.nearestNode(new Vector3(0.25, 0, 0), nodes, positions, 0.1),
+    ).toBe('file')
+    expect(
+      Logic.nearestNode(new Vector3(0.7, 0, 0), nodes, positions, 0.1),
+    ).toBe('symbol')
+    expect(
+      Logic.nearestNode(new Vector3(2, 0, 0), nodes, positions, 0.1),
+    ).toBeNull()
   })
 })

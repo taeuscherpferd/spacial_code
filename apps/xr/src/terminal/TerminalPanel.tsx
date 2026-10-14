@@ -4,6 +4,7 @@ import { terminalInput, processLabel } from '@/terminal/TerminalInput'
 import { useTerminalBuffer } from '@/terminal/hooks/useTerminalBuffer'
 import type { ProcessState } from '@/connection/protocol'
 import { TerminalLogic } from '@/terminal/Terminal.logic'
+import { useThumbstickScroll } from '@/scene/hooks/useThumbstickScroll'
 
 interface TerminalPanelProps {
   chunks: string[]
@@ -47,8 +48,16 @@ export const TerminalPanel = ({
     [buffer, scrollback],
   )
 
+  const scrollBy = (lines: number): void => {
+    const maximum = Math.max(0, buffer.lines.length - visibleLineCount)
+    setScrollback((current) => Math.min(maximum, Math.max(0, current + lines)))
+  }
+  // Scrollback counts up from the newest line, so pushing the stick down lowers it.
+  const thumbstick = useThumbstickScroll((steps) => scrollBy(-steps))
+
   return (
     <group
+      {...thumbstick}
       position={[2.4, -2.15, 0]}
       onPointerDown={(event) => {
         event.stopPropagation()
@@ -56,10 +65,7 @@ export const TerminalPanel = ({
       }}
       onWheel={(event) => {
         event.stopPropagation()
-        const maximum = Math.max(0, buffer.lines.length - visibleLineCount)
-        setScrollback((current) =>
-          Math.min(maximum, Math.max(0, current + (event.deltaY < 0 ? 3 : -3))),
-        )
+        scrollBy(event.deltaY < 0 ? 3 : -3)
       }}
     >
       <RoundedBox args={[5.2, 1.55, 0.12]} radius={0.12} smoothness={4}>

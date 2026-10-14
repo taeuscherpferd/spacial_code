@@ -1,7 +1,7 @@
 import { Billboard, Text } from '@react-three/drei'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useRef, useState } from 'react'
-import { Plane, Vector3, type Group } from 'three'
+import { Vector3, type Group } from 'three'
 import type { GraphNode } from '@/connection/protocol'
 import { CodeGraphLogic, type Position3 } from '@/graph/CodeGraph.logic'
 
@@ -16,9 +16,6 @@ interface GraphNodeViewProps {
   onToggleCollapsed: (id: string) => void
   onFocus: (id: string) => void
 }
-
-/** How far (in graph units) the pointer must travel before a press becomes a drag. */
-const dragThreshold = 0.03
 
 export const GraphNodeView = ({
   node,
@@ -42,22 +39,24 @@ export const GraphNodeView = ({
   const groupRef = useRef<Group>(null)
   // Offset from the grab point to the node centre, so the node doesn't jump to the cursor.
   const grabOffset = useRef<Vector3 | null>(null)
-  // Where the press started; cleared once it turns into a drag so release won't select.
+  // Where the press started in world space; cleared once it turns into a drag so release won't select.
   const pressStart = useRef<Vector3 | null>(null)
-  const dragPlane = useRef(new Plane())
+  // How far along the pointer ray the grab point sits; it stays there while dragging.
+  const dragDistance = useRef(0)
 
   useEffect(() => () => onDraggingChange(false), [onDraggingChange])
 
-  /** Where the pointer ray crosses the node's drag plane, in the graph's local space. */
-  const pointOnDragPlane = (
-    event: ThreeEvent<PointerEvent>,
-  ): Vector3 | null => {
+  const worldAlongRay = (event: ThreeEvent<PointerEvent>): Vector3 =>
+    event.ray.at(dragDistance.current, new Vector3())
+
+  /** The point held at the grab distance along the pointer ray, in the graph's local space. */
+  const pointAlongRay = (event: ThreeEvent<PointerEvent>): Vector3 | null => {
     const group = groupRef.current
-    const hit = event.ray.intersectPlane(dragPlane.current, new Vector3())
-    if (!group || !hit) {
+    if (!group) {
       return null
     }
-    return group.parent ? group.parent.worldToLocal(hit) : hit
+    const point = worldAlongRay(event)
+    return group.parent ? group.parent.worldToLocal(point) : point
   }
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>): void => {
@@ -66,15 +65,13 @@ export const GraphNodeView = ({
     if (!group) {
       return
     }
-    // Drag on the plane facing the camera through the node's current position.
-    const nodeWorld = group.getWorldPosition(new Vector3())
-    const normal = event.ray.direction.clone().negate()
-    dragPlane.current.setFromNormalAndCoplanarPoint(normal, nodeWorld)
-    const start = pointOnDragPlane(event)
+    // The node follows the pointer at a fixed distance, so it moves in depth with the controller too.
+    dragDistance.current = event.ray.origin.distanceTo(event.point)
+    const start = pointAlongRay(event)
     grabOffset.current = start
       ? new Vector3(...position).sub(start)
       : new Vector3()
-    pressStart.current = start ?? new Vector3(...position)
+    pressStart.current = worldAlongRay(event)
     // R3F capture keeps move events coming to this node even when the ray leaves the sphere.
     ;(event.target as Element).setPointerCapture(event.pointerId)
     onDraggingChange(true)
@@ -85,15 +82,16 @@ export const GraphNodeView = ({
       return
     }
     event.stopPropagation()
-    const point = pointOnDragPlane(event)
-    if (!point) {
-      return
-    }
     if (pressStart.current) {
-      if (point.distanceTo(pressStart.current) < dragThreshold) {
+      const moved = worldAlongRay(event).distanceTo(pressStart.current)
+      if (!CodeGraphLogic.isDrag(moved, dragDistance.current)) {
         return
       }
       pressStart.current = null
+    }
+    const point = pointAlongRay(event)
+    if (!point) {
+      return
     }
     point.add(grabOffset.current)
     onMove(node.id, [point.x, point.y, point.z])

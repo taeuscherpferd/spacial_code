@@ -123,6 +123,10 @@
   cursor: pointer;
 }
 
+.segmented + .check {
+  margin-top: 0.5rem;
+}
+
 .types {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

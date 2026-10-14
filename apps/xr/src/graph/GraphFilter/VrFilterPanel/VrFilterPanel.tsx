@@ -1,5 +1,6 @@
 import type { GraphNode } from '@/connection/protocol'
 import { EditorButton } from '@/editor/EditorButton/EditorButton'
+import { groupModeLabels } from '@/graph/GraphCluster/GraphCluster.logic'
 import {
   GraphFilterLogic,
   externalModulesLabels,
@@ -82,8 +83,8 @@ export const VrFilterPanel = ({
       scale={0.42}
     >
       <RoundedBox
-        args={[3, 4.6, 0.08]}
-        position={[0, -0.05, 0]}
+        args={[3, 4.9, 0.08]}
+        position={[0, -0.2, 0]}
         radius={0.07}
         smoothness={4}
       >
@@ -224,6 +225,30 @@ export const VrFilterPanel = ({
           />
         </group>
 
+        <group position={[-0.65, -1.5, 0]}>
+          <EditorButton
+            label={`Group by: ${groupModeLabels[filters.groupBy]}`}
+            active={filters.groupBy !== 'connectivity'}
+            width={1.4}
+            fontSize={0.075}
+            onPress={() =>
+              controls.setGroupBy(
+                VrFilterPanelLogic.nextGroupMode(filters.groupBy),
+              )
+            }
+          />
+        </group>
+        <group position={[0.7, -1.5, 0]}>
+          <EditorButton
+            label={filters.showGroups ? 'Names: shown' : 'Names: hidden'}
+            active={!filters.showGroups}
+            width={1.2}
+            fontSize={0.075}
+            disabled={filters.groupBy === 'none'}
+            onPress={controls.toggleShowGroups}
+          />
+        </group>
+
         {extensions.rows.map(({ extension, count }, index) => {
           const hidden = filters.hiddenExtensions.includes(extension)
           return (
@@ -231,7 +256,7 @@ export const VrFilterPanel = ({
               key={extension}
               position={[
                 -1.035 + (index % 4) * 0.69,
-                -1.5 - Math.floor(index / 4) * 0.3,
+                -1.8 - Math.floor(index / 4) * 0.3,
                 0,
               ]}
             >
@@ -247,7 +272,7 @@ export const VrFilterPanel = ({
         })}
         {extensions.count > 1 && (
           <>
-            <group position={[-0.94, -2.12, 0]}>
+            <group position={[-0.94, -2.42, 0]}>
               <EditorButton
                 label="Previous"
                 width={0.6}
@@ -256,10 +281,10 @@ export const VrFilterPanel = ({
                 onPress={() => setExtensionPage(extensions.index - 1)}
               />
             </group>
-            <Text position={[0, -2.12, 0]} fontSize={0.065}>
+            <Text position={[0, -2.42, 0]} fontSize={0.065}>
               {`Types ${extensions.index + 1} / ${extensions.count}`}
             </Text>
-            <group position={[0.94, -2.12, 0]}>
+            <group position={[0.94, -2.42, 0]}>
               <EditorButton
                 label="Next"
                 width={0.6}

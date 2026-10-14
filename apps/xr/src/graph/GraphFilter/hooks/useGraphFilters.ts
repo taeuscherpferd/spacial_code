@@ -1,4 +1,5 @@
 import type { ProgramGraph } from '@/connection/protocol'
+import type { GroupMode } from '@/graph/GraphCluster/GraphCluster.logic'
 import {
   type ExtensionCount,
   type ExternalModulesMode,
@@ -24,6 +25,8 @@ export interface GraphFilterControls {
   toggleTests: () => void
   toggleExtension: (extension: string) => void
   setExternalModules: (mode: ExternalModulesMode) => void
+  setGroupBy: (mode: GroupMode) => void
+  toggleShowGroups: () => void
   reset: () => void
 }
 
@@ -36,7 +39,7 @@ export const useGraphFilters = (graph: ProgramGraph): GraphFilterControls => {
   const searchable = useMemo(
     () =>
       GraphFilterLogic.apply(graph, {
-        query: '',
+        ...defaultGraphFilters,
         hideTests,
         hiddenExtensions,
         externalModules,
@@ -71,6 +74,17 @@ export const useGraphFilters = (graph: ProgramGraph): GraphFilterControls => {
           : [...current.hiddenExtensions, extension],
       })),
     setExternalModules: (externalModules) => update({ externalModules }),
-    reset: () => setFilters(defaultGraphFilters),
+    setGroupBy: (groupBy) => update({ groupBy }),
+    toggleShowGroups: () =>
+      setFilters((current) => ({
+        ...current,
+        showGroups: !current.showGroups,
+      })),
+    reset: () =>
+      setFilters((current) => ({
+        ...defaultGraphFilters,
+        groupBy: current.groupBy,
+        showGroups: current.showGroups,
+      })),
   }
 }

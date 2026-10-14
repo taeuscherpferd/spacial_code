@@ -124,34 +124,33 @@ export const WorkspaceScene = ({
           onActivate={() => onActivePanel('editor')}
           onChange={onSourceChange}
           onSave={onSave}
-        />
-      )}
-      {session && (
-        <TerminalPanel
-          chunks={terminalChunks}
-          process={process}
-          active={activePanel === 'terminal'}
-          onActivate={() => onActivePanel('terminal')}
-          onInput={onTerminalInput}
-        />
-      )}
-      {session && (
-        <SpatialToolbar
-          process={process}
-          canSave={source !== null && source.content !== source.savedContent}
-          canFocus={selectedNode !== null}
-          canBack={canGoBack}
-          canCollapse={selectedNode !== null}
-          filtersActive={filterControls.activeCount > 0}
-          onRun={onRun}
-          onStop={onStop}
-          onRestart={onRestart}
-          onSave={() => source && onSave(source.content)}
-          onFocus={() => selectedNode && onFocusNode(selectedNode.id)}
-          onBack={onBack}
-          onCollapse={() => selectedNode && onToggleCollapsed(selectedNode.id)}
-          onFilters={toggleFilters}
-        />
+        >
+          <TerminalPanel
+            chunks={terminalChunks}
+            process={process}
+            active={activePanel === 'terminal'}
+            onActivate={() => onActivePanel('terminal')}
+            onInput={onTerminalInput}
+          />
+          <SpatialToolbar
+            process={process}
+            canSave={source !== null && source.content !== source.savedContent}
+            canFocus={selectedNode !== null}
+            canBack={canGoBack}
+            canCollapse={selectedNode !== null}
+            filtersActive={filterControls.activeCount > 0}
+            onRun={onRun}
+            onStop={onStop}
+            onRestart={onRestart}
+            onSave={() => source && onSave(source.content)}
+            onFocus={() => selectedNode && onFocusNode(selectedNode.id)}
+            onBack={onBack}
+            onCollapse={() =>
+              selectedNode && onToggleCollapsed(selectedNode.id)
+            }
+            onFilters={toggleFilters}
+          />
+        </VrEditor>
       )}
       <OrbitControls
         makeDefault

@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { GraphNode } from '@/connection/protocol'
 import {
+  type GroupMode,
+  groupModeLabels,
+} from '@/graph/GraphCluster/GraphCluster.logic'
+import {
   type ExternalModulesMode,
   GraphFilterLogic,
   externalModulesLabels,
@@ -16,6 +20,7 @@ interface GraphFilterPanelProps {
 }
 
 const modes: ExternalModulesMode[] = ['hide', 'related', 'all']
+const groupModes: GroupMode[] = ['connectivity', 'folder', 'none']
 
 /** The desktop filters menu. Ctrl+P opens it with the search focused, like VS Code. */
 export const GraphFilterPanel = ({
@@ -117,6 +122,32 @@ export const GraphFilterPanel = ({
             onChange={controls.toggleTests}
           />
           Hide tests
+        </label>
+      </div>
+
+      <div className={styles.section}>
+        <h3>Group by</h3>
+        <div className={styles.segmented} role="radiogroup">
+          {groupModes.map((mode) => (
+            <button
+              type="button"
+              role="radio"
+              key={mode}
+              aria-checked={filters.groupBy === mode}
+              onClick={() => controls.setGroupBy(mode)}
+            >
+              {groupModeLabels[mode]}
+            </button>
+          ))}
+        </div>
+        <label className={styles.check}>
+          <input
+            type="checkbox"
+            checked={filters.showGroups}
+            disabled={filters.groupBy === 'none'}
+            onChange={controls.toggleShowGroups}
+          />
+          Show group names and bubbles
         </label>
       </div>
 

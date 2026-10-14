@@ -1,4 +1,5 @@
 import type { GraphNode, ProgramGraph } from '@/connection/protocol'
+import type { GroupMode } from '@/graph/GraphCluster/GraphCluster.logic'
 import { GraphSearchLogic } from '@/graph/GraphFilter/GraphSearch.logic'
 
 /**
@@ -15,6 +16,10 @@ export interface GraphFilters {
   /** Extensions (without the dot, e.g. `scss`, `d.ts`) whose files are hidden. */
   hiddenExtensions: readonly string[]
   externalModules: ExternalModulesMode
+  /** How files are gathered in the layout. Not a filter, so it isn't counted or reset. */
+  groupBy: GroupMode
+  /** Draw each group's bubble and name. Also a display setting, like `groupBy`. */
+  showGroups: boolean
 }
 
 export const defaultGraphFilters: GraphFilters = {
@@ -22,6 +27,8 @@ export const defaultGraphFilters: GraphFilters = {
   hideTests: false,
   hiddenExtensions: [],
   externalModules: 'related',
+  groupBy: 'connectivity',
+  showGroups: true,
 }
 
 export interface ExtensionCount {

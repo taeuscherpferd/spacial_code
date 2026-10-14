@@ -1,3 +1,4 @@
+import type { GroupMode } from '@/graph/GraphCluster/GraphCluster.logic'
 import type { ExternalModulesMode } from '@/graph/GraphFilter/GraphFilter.logic'
 import { Euler, Quaternion, Vector3 } from 'three'
 
@@ -9,6 +10,7 @@ export const keyboardRows = [
 ] as const
 
 const moduleModes: readonly ExternalModulesMode[] = ['related', 'all', 'hide']
+const groupModes: readonly GroupMode[] = ['connectivity', 'folder', 'none']
 
 export class VrFilterPanelLogic {
   static placement(position: Vector3, orientation: Quaternion) {
@@ -25,6 +27,10 @@ export class VrFilterPanelLogic {
 
   static nextModulesMode(mode: ExternalModulesMode): ExternalModulesMode {
     return moduleModes[(moduleModes.indexOf(mode) + 1) % moduleModes.length]
+  }
+
+  static nextGroupMode(mode: GroupMode): GroupMode {
+    return groupModes[(groupModes.indexOf(mode) + 1) % groupModes.length]
   }
 
   static backspace(query: string): string {

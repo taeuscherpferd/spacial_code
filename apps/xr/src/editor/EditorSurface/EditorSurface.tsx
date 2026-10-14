@@ -5,6 +5,7 @@ import { CodeEditorLogic, type EditorState } from '@/editor/CodeEditor.logic'
 import { EditorSurfaceLogic as Layout } from '@/editor/EditorSurface/EditorSurface.logic'
 import { EditorHighlightingLogic } from '@/editor/highlighting/EditorHighlighting.logic'
 import type { EditorDiagnostic } from '@/editor/diagnostics/EditorDiagnostics.logic'
+import { useThumbstickScroll } from '@/scene/hooks/useThumbstickScroll'
 
 interface EditorSurfaceProps {
   state: EditorState
@@ -161,6 +162,12 @@ export const EditorSurface = ({
     texture,
   ])
 
+  const scrollSideways = (pixels: number): void => {
+    const maxWidth = Math.max(0, ...state.text.split('\n').map(measure))
+    setScrollX((current) => Math.max(0, Math.min(maxWidth, current + pixels)))
+  }
+  const thumbstick = useThumbstickScroll(scrollSideways, 1400, 'x')
+
   const offsetAt = (event: ThreeEvent<PointerEvent>): number => {
     const v = ((event.uv?.y ?? 1) * canvas.height - 64) / Layout.height
     const line = lines[Layout.rowAt(v, lines.length)]
@@ -173,6 +180,7 @@ export const EditorSurface = ({
 
   return (
     <mesh
+      {...thumbstick}
       position={[0, -0.085, 0.081]}
       onPointerDown={(event) => {
         event.stopPropagation()
@@ -202,11 +210,7 @@ export const EditorSurface = ({
         if (!event.shiftKey && Math.abs(event.deltaX) <= Math.abs(event.deltaY))
           return
         event.stopPropagation()
-        const maxWidth = Math.max(0, ...state.text.split('\n').map(measure))
-        const delta = event.shiftKey ? event.deltaY : event.deltaX
-        setScrollX((current) =>
-          Math.max(0, Math.min(maxWidth, current + delta)),
-        )
+        scrollSideways(event.shiftKey ? event.deltaY : event.deltaX)
       }}
     >
       <planeGeometry args={[4.8, canvas.height / 400]} />

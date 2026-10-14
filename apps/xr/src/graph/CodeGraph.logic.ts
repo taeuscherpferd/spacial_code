@@ -1,4 +1,8 @@
-import { SpatialGraphLayoutLogic } from '@/graph/SpatialGraphLayout.logic'
+import type { GraphGroup } from '@/graph/GraphCluster/GraphCluster.logic'
+import {
+  SpatialGraphLayoutLogic,
+  type GraphLayout,
+} from '@/graph/SpatialGraphLayout.logic'
 import type {
   GraphEdge,
   GraphNode,
@@ -65,6 +69,16 @@ export class CodeGraphLogic {
     return kind === 'file' ? 0.2 : 0.13
   }
 
+  /**
+   * Whether a press has travelled far enough to count as a drag rather than a
+   * click. Both values are world metres; `distance` is how far along the ray
+   * the press was. Far away, small wrist jitter sweeps the ray point a long
+   * way, so the allowance grows with distance (about 4 degrees of turn).
+   */
+  static isDrag(moved: number, distance: number): boolean {
+    return moved >= Math.max(0.05, distance * Math.tan((4 * Math.PI) / 180))
+  }
+
   /** Places an arrow tip `inset` short of `tip`, pointing away from `tail`. */
   static arrowHead(
     tip: Position3,
@@ -91,8 +105,11 @@ export class CodeGraphLogic {
     }
   }
 
-  static layout(graph: ProgramGraph): Map<string, Position3> {
-    return SpatialGraphLayoutLogic.layout(graph)
+  static layout(
+    graph: ProgramGraph,
+    groups: readonly GraphGroup[] = [],
+  ): GraphLayout {
+    return SpatialGraphLayoutLogic.layout(graph, groups)
   }
 
   /** The bounding sphere of a layout, for framing the camera around its actual extent. */

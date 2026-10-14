@@ -1,4 +1,5 @@
 import type {} from 'vitest/config'
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import react from '@vitejs/plugin-react'
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
@@ -14,7 +15,7 @@ const localCertificate =
     : undefined
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), basicSsl()],
   test: { css: { include: /EditorHighlighting\.module\.scss/ } },
   resolve: {
     alias: {

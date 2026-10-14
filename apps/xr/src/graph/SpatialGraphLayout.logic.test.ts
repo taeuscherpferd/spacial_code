@@ -22,16 +22,16 @@ const contains = (source: string, target: string) => ({
 
 describe('SpatialGraphLayoutLogic', () => {
   it('handles an empty workspace', () => {
-    expect(SpatialGraphLayoutLogic.layout({ nodes: [], edges: [] }).size).toBe(
-      0,
-    )
+    expect(
+      SpatialGraphLayoutLogic.layout({ nodes: [], edges: [] }).positions.size,
+    ).toBe(0)
   })
 
   it('separates files in depth even in a two-file workspace', () => {
     const positions = SpatialGraphLayoutLogic.layout({
       nodes: [node('a'), node('b')],
       edges: [],
-    })
+    }).positions
     expect(
       Math.abs(positions.get('a')![2] - positions.get('b')![2]),
     ).toBeGreaterThan(1)
@@ -42,7 +42,7 @@ describe('SpatialGraphLayoutLogic', () => {
       ...SpatialGraphLayoutLogic.layout({
         nodes: Array.from({ length: 27 }, (_, index) => node(`file:${index}`)),
         edges: [],
-      }).values(),
+      }).positions.values(),
     ]
     for (const axis of [0, 1, 2]) {
       expect(
@@ -70,11 +70,12 @@ describe('SpatialGraphLayoutLogic', () => {
         contains('big', `big:fn:${index}`),
       ),
     }
-    const withOutlierPositions = SpatialGraphLayoutLogic.layout(withOutlier)
+    const withOutlierPositions =
+      SpatialGraphLayoutLogic.layout(withOutlier).positions
     const withoutOutlierPositions = SpatialGraphLayoutLogic.layout({
       nodes: plainFiles,
       edges: [],
-    })
+    }).positions
 
     // The gap between two plain files' slots should be unaffected by the unrelated huge
     // cluster landing in a different slot elsewhere in the grid.
@@ -111,7 +112,7 @@ describe('SpatialGraphLayoutLogic', () => {
   }
 
   it('gives symbols depth and keeps nested clusters separated', () => {
-    const positions = SpatialGraphLayoutLogic.layout(clustered)
+    const positions = SpatialGraphLayoutLogic.layout(clustered).positions
     expect(positions.size).toBe(clustered.nodes.length)
     expect(positions.get('method')![2]).not.toBe(positions.get('class')![2])
     const values = [...positions.values()]
@@ -128,11 +129,11 @@ describe('SpatialGraphLayoutLogic', () => {
 
   it('is independent of incoming node and edge order and does not mutate input', () => {
     const original = structuredClone(clustered)
-    expect(SpatialGraphLayoutLogic.layout(clustered)).toEqual(
+    expect(SpatialGraphLayoutLogic.layout(clustered).positions).toEqual(
       SpatialGraphLayoutLogic.layout({
         nodes: [...clustered.nodes].reverse(),
         edges: [...clustered.edges].reverse(),
-      }),
+      }).positions,
     )
     expect(clustered).toEqual(original)
   })
@@ -148,7 +149,7 @@ describe('SpatialGraphLayoutLogic', () => {
         contains('a', 'missing'),
         { id: 'call', source: 'orphan', target: 'a', kind: 'calls' },
       ],
-    })
+    }).positions
     expect([...positions.keys()].sort()).toEqual(['a', 'b', 'orphan'])
   })
 })

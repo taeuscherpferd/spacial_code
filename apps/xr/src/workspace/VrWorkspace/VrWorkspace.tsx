@@ -10,6 +10,7 @@ import { EditorButton } from '@/editor/EditorButton/EditorButton'
 import type { WorkspaceBrowserControls } from '@/workspace/WorkspaceBrowser/hooks/useWorkspaceBrowser'
 import { WorkspaceBrowserLogic } from '@/workspace/WorkspaceBrowser/WorkspaceBrowser.logic'
 import { VrWorkspaceRow } from '@/workspace/VrWorkspaceRow/VrWorkspaceRow'
+import { useThumbstickScroll } from '@/scene/hooks/useThumbstickScroll'
 
 interface VrWorkspaceProps {
   controls: WorkspaceBrowserControls
@@ -59,6 +60,14 @@ export const VrWorkspace = ({ controls }: VrWorkspaceProps) => {
           label: WorkspaceBrowserLogic.label(row),
         }))
   const page = WorkspaceBrowserLogic.page(items, controls.page)
+  // The list is paged rather than scrolled, so the stick turns pages, more slowly.
+  const thumbstick = useThumbstickScroll(
+    (steps) =>
+      controls.setPage(
+        Math.min(Math.max(page.index + steps, 0), page.count - 1),
+      ),
+    3,
+  )
   const message = controls.switching
     ? 'Opening project…'
     : controls.error
@@ -77,6 +86,7 @@ export const VrWorkspace = ({ controls }: VrWorkspaceProps) => {
     visible &&
     placement && (
       <group
+        {...thumbstick}
         position={placement.position}
         rotation={[0, placement.rotation, 0]}
         scale={0.55}
