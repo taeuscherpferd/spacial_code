@@ -1,17 +1,16 @@
-import { useMemo, useState } from 'react'
 import type { GraphNode, ProgramGraph } from '@/connection/protocol'
-import {
-  CodeGraphLogic,
-  type Position3,
-  type ScopeOptions,
-  defaultScopeOptions,
-} from '@/graph/CodeGraph.logic'
-import { useCameraFit } from '@/graph/useCameraFit'
+import { CodeGraphLogic, type Position3 } from '@/graph/CodeGraph.logic'
 import { GraphEdges } from '@/graph/GraphEdges/GraphEdges'
+import {
+  GraphFilterLogic,
+  type GraphFilters,
+} from '@/graph/GraphFilter/GraphFilter.logic'
 import { useGraphManipulation } from '@/graph/GraphManipulation/hooks/useGraphManipulation'
 import { GraphNodeInstances } from '@/graph/GraphNodeInstances'
 import { GraphNodeView } from '@/graph/GraphNodeView'
+import { useCameraFit } from '@/graph/useCameraFit'
 import { useNodeDetailLod } from '@/graph/useNodeDetailLod'
+import { useMemo, useState } from 'react'
 
 interface CodeGraphProps {
   graph: ProgramGraph
@@ -22,7 +21,7 @@ interface CodeGraphProps {
   onSelect: (node: GraphNode) => void
   onToggleCollapsed: (id: string) => void
   onFocus: (id: string) => void
-  scopeOptions?: ScopeOptions
+  filters: GraphFilters
 }
 
 export const CodeGraph = ({
@@ -34,7 +33,7 @@ export const CodeGraph = ({
   onDraggingChange,
   onToggleCollapsed,
   onFocus,
-  scopeOptions = defaultScopeOptions,
+  filters,
 }: CodeGraphProps) => {
   const graphRef = useGraphManipulation()
   const [overrides, setOverrides] = useState<Map<string, Position3>>(new Map())
@@ -53,9 +52,13 @@ export const CodeGraph = ({
     return CodeGraphLogic.bounds(files.size ? files : layout)
   }, [graph, layout])
   useCameraFit(bounds)
+  const filtered = useMemo(
+    () => GraphFilterLogic.apply(graph, filters),
+    [filters, graph],
+  )
   const visible = useMemo(
-    () => CodeGraphLogic.visible(graph, collapsedNodeIds, focusedNodeId),
-    [collapsedNodeIds, focusedNodeId, graph],
+    () => CodeGraphLogic.visible(filtered, collapsedNodeIds, focusedNodeId),
+    [collapsedNodeIds, filtered, focusedNodeId],
   )
   const nodesById = useMemo(
     () => new Map(graph.nodes.map((node) => [node.id, node])),
@@ -64,9 +67,10 @@ export const CodeGraph = ({
   const selectedNode = selectedNodeId
     ? (nodesById.get(selectedNodeId) ?? null)
     : null
+  const showModules = filters.externalModules === 'all'
   const { nodes, edges } = useMemo(
-    () => CodeGraphLogic.scoped(visible, selectedNode, scopeOptions),
-    [scopeOptions, selectedNode, visible],
+    () => CodeGraphLogic.scoped(visible, selectedNode, { showModules }),
+    [showModules, selectedNode, visible],
   )
   const alwaysDetailed = useMemo(() => {
     const ids = new Set<string>()
@@ -78,6 +82,7 @@ export const CodeGraph = ({
     }
     return ids
   }, [selectedNodeId, focusedNodeId])
+
   const detailedIds = useNodeDetailLod(
     graphRef,
     nodes,

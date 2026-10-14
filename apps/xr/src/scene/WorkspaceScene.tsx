@@ -8,6 +8,8 @@ import type {
 } from '@/connection/protocol'
 import { VrEditor } from '@/editor/VrEditor/VrEditor'
 import { CodeGraph } from '@/graph/CodeGraph'
+import type { GraphFilterControls } from '@/graph/GraphFilter/hooks/useGraphFilters'
+import { VrFilterPanel } from '@/graph/GraphFilter/VrFilterPanel/VrFilterPanel'
 import { SpatialToolbar } from '@/scene/SpatialToolbar'
 import { TerminalPanel } from '@/terminal/TerminalPanel'
 import { Grid, OrbitControls } from '@react-three/drei'
@@ -16,6 +18,7 @@ import { useState } from 'react'
 
 interface WorkspaceSceneProps {
   workspaceControls: WorkspaceBrowserControls
+  filterControls: GraphFilterControls
   graph: ProgramGraph
   source: SourceDocument | null
   process: ProcessState
@@ -40,6 +43,7 @@ interface WorkspaceSceneProps {
 
 export const WorkspaceScene = ({
   workspaceControls,
+  filterControls,
   graph,
   source,
   process,
@@ -63,6 +67,8 @@ export const WorkspaceScene = ({
 }: WorkspaceSceneProps) => {
   const [dragging, setDragging] = useState(false)
   const [editorInteraction, setEditorInteraction] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const toggleFilters = () => setFiltersOpen((open) => !open)
   const session = useXR((state) => state.session)
   return (
     <>
@@ -98,7 +104,16 @@ export const WorkspaceScene = ({
         onDraggingChange={setDragging}
         onToggleCollapsed={onToggleCollapsed}
         onFocus={onFocusNode}
+        filters={filterControls.deferredFilters}
       />
+      {session && (
+        <VrFilterPanel
+          controls={filterControls}
+          open={filtersOpen}
+          onToggle={toggleFilters}
+          onSelectNode={onSelectNode}
+        />
+      )}
       {session && <VrWorkspace controls={workspaceControls} />}
       {session && (
         <VrEditor
@@ -127,6 +142,7 @@ export const WorkspaceScene = ({
           canFocus={selectedNode !== null}
           canBack={canGoBack}
           canCollapse={selectedNode !== null}
+          filtersActive={filterControls.activeCount > 0}
           onRun={onRun}
           onStop={onStop}
           onRestart={onRestart}
@@ -134,6 +150,7 @@ export const WorkspaceScene = ({
           onFocus={() => selectedNode && onFocusNode(selectedNode.id)}
           onBack={onBack}
           onCollapse={() => selectedNode && onToggleCollapsed(selectedNode.id)}
+          onFilters={toggleFilters}
         />
       )}
       <OrbitControls

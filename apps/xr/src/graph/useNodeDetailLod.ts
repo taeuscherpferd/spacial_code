@@ -1,12 +1,10 @@
+import type { GraphNode } from '@/connection/protocol'
+import type { Position3 } from '@/graph/CodeGraph.logic'
 import { useFrame } from '@react-three/fiber'
 import { useRef, useState, type RefObject } from 'react'
 import { Frustum, Matrix4, Vector3, type Group } from 'three'
-import type { GraphNode } from '@/connection/protocol'
-import type { Position3 } from '@/graph/CodeGraph.logic'
 
-/** Nodes farther than this (in graph-local units) stay at low detail regardless of frustum. */
 const maxDetailDistance = 10
-/** Each detailed node is a full mesh plus troika text, so only the nearest few get one. */
 const maxDetailedNodes = 60
 const updateIntervalMs = 150
 
@@ -25,12 +23,6 @@ const setsEqual = (
   return true
 }
 
-/**
- * Picks which nodes are worth the full mesh + billboard + text treatment: anything in
- * `alwaysDetailed` (selection, focus), plus the nearest `maxDetailedNodes` shown nodes
- * that are both close to the camera and inside its view frustum. Recomputed on a timer rather than every frame since it only
- * needs to track camera movement, not render smoothly.
- */
 export const useNodeDetailLod = (
   groupRef: RefObject<Group | null>,
   nodes: readonly GraphNode[],

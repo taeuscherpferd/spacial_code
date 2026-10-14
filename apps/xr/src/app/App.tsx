@@ -5,6 +5,8 @@ import type { GraphNode } from '@/connection/protocol'
 import { CodeGraphLogic } from '@/graph/CodeGraph.logic'
 import { webSocketClient } from '@/connection/WebSocketClient'
 import { DesktopDock } from '@/app/DesktopDock/DesktopDock'
+import { GraphFilterPanel } from '@/graph/GraphFilter/GraphFilterPanel/GraphFilterPanel'
+import { useGraphFilters } from '@/graph/GraphFilter/hooks/useGraphFilters'
 import { WorkspaceScene } from '@/scene/WorkspaceScene'
 import { WorkspaceTree } from '@/workspace/WorkspaceTree'
 import { useWorkspaceBrowser } from '@/workspace/WorkspaceBrowser/hooks/useWorkspaceBrowser'
@@ -50,6 +52,8 @@ export const App = () => {
     null,
   )
   const [configuration, setConfiguration] = useState('')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const filterControls = useGraphFilters(app.graph)
 
   useEffect(() => {
     webSocketClient.connect(dispatch)
@@ -163,6 +167,7 @@ export const App = () => {
             <WorkspaceScene
               key={app.workspace?.root}
               workspaceControls={workspaceControls}
+              filterControls={filterControls}
               graph={app.graph}
               source={app.source}
               process={app.process}
@@ -276,6 +281,17 @@ export const App = () => {
           <span className={styles.divider} />
           <button
             type="button"
+            className={styles.button}
+            aria-pressed={filtersOpen}
+            title="Filters (Ctrl+P)"
+            onClick={() => setFiltersOpen((open) => !open)}
+          >
+            Filters
+            {filterControls.activeCount > 0 &&
+              ` · ${filterControls.activeCount}`}
+          </button>
+          <button
+            type="button"
             className={`${styles.button} ${styles.xrButton}`}
             onClick={() => void xrStore.enterVR()}
           >
@@ -283,6 +299,15 @@ export const App = () => {
           </button>
         </div>
       </header>
+
+      {!immersive && (
+        <GraphFilterPanel
+          controls={filterControls}
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          onSelectNode={selectNode}
+        />
+      )}
 
       {!immersive && (
         <WorkspaceTree key={app.workspace?.root} controls={workspaceControls} />

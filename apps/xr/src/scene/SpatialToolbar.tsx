@@ -7,6 +7,7 @@ interface SpatialToolbarProps {
   canFocus: boolean
   canBack: boolean
   canCollapse: boolean
+  filtersActive: boolean
   onRun: () => void
   onStop: () => void
   onRestart: () => void
@@ -14,6 +15,7 @@ interface SpatialToolbarProps {
   onFocus: () => void
   onBack: () => void
   onCollapse: () => void
+  onFilters: () => void
 }
 
 export const SpatialToolbar = ({
@@ -22,6 +24,7 @@ export const SpatialToolbar = ({
   canFocus,
   canBack,
   canCollapse,
+  filtersActive,
   onRun,
   onStop,
   onRestart,
@@ -29,6 +32,7 @@ export const SpatialToolbar = ({
   onFocus,
   onBack,
   onCollapse,
+  onFilters,
 }: SpatialToolbarProps) => {
   const running = process.status === 'running'
   return (
@@ -64,6 +68,12 @@ export const SpatialToolbar = ({
         label="FOLD"
         enabled={canCollapse}
         onPress={onCollapse}
+      />
+      <SpatialButton
+        x={3.22}
+        label={filtersActive ? 'FILTER •' : 'FILTER'}
+        enabled
+        onPress={onFilters}
       />
     </group>
   )
