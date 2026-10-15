@@ -1,5 +1,4 @@
 import type { GraphNode } from '@/connection/protocol'
-import { EditorButton } from '@/editor/EditorButton/EditorButton'
 import { groupModeLabels } from '@/graph/GraphCluster/GraphCluster.logic'
 import {
   GraphFilterLogic,
@@ -10,10 +9,13 @@ import {
   VrFilterPanelLogic,
   keyboardRows,
 } from '@/graph/GraphFilter/VrFilterPanel/VrFilterPanel.logic'
+import { VrButton } from '@/ui/VrButton/VrButton'
+import { VrLine } from '@/ui/VrLine/VrLine'
+import { VrPanel } from '@/ui/VrPanel/VrPanel'
 import { VrWorkspaceRow } from '@/workspace/VrWorkspaceRow/VrWorkspaceRow'
 import { WorkspaceBrowserLogic } from '@/workspace/WorkspaceBrowser/WorkspaceBrowser.logic'
-import { RoundedBox, Text } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
+import { Container, Input, Text } from '@react-three/uikit'
 import {
   useXRControllerButtonEvent,
   useXRInputSourceState,
@@ -28,7 +30,6 @@ interface VrFilterPanelProps {
   onSelectNode: (node: GraphNode) => void
 }
 
-const keyPitch = 0.27
 const resultRows = 4
 const extensionsPerPage = 8
 
@@ -82,220 +83,178 @@ export const VrFilterPanel = ({
       rotation={[0, placement.rotation, 0]}
       scale={0.42}
     >
-      <RoundedBox
-        args={[3, 4.9, 0.08]}
-        position={[0, -0.2, 0]}
-        radius={0.07}
-        smoothness={4}
-      >
-        <meshBasicMaterial color="#0c1425" />
-      </RoundedBox>
-      <group position={[0, 0, 0.06]}>
-        <Text position={[-1.35, 2.0, 0]} anchorX="left" fontSize={0.105}>
-          Filters
-          {controls.activeCount > 0 ? ` · ${controls.activeCount} on` : ''}
-        </Text>
-        <Text
-          position={[1.35, 2.0, 0]}
-          anchorX="right"
-          fontSize={0.062}
-          color="#9aaed0"
-        >
-          Y: hide / show
-        </Text>
+      <VrPanel width={600} height={1020}>
+        <Container flexDirection="row" alignItems="center" gap={10}>
+          <VrLine
+            text={`Filters${controls.activeCount > 0 ? ` · ${controls.activeCount} on` : ''}`}
+            fontSize={21}
+          />
+          <Text fontSize={12} color="#9aaed0">
+            Y: hide / show
+          </Text>
+        </Container>
 
-        <RoundedBox
-          args={[2.7, 0.24, 0.02]}
-          position={[0, 1.7, 0]}
-          radius={0.03}
-        >
-          <meshBasicMaterial color="#070a12" />
-        </RoundedBox>
-        <Text
-          position={[-1.29, 1.7, 0.02]}
-          anchorX="left"
-          fontSize={0.08}
-          maxWidth={2.58}
-          whiteSpace="nowrap"
-          clipRect={[-0.01, -0.1, 2.58, 0.1]}
-          color={filters.query ? '#f4f6ff' : '#7883a8'}
-        >
-          {filters.query ? `${filters.query}_` : 'Search files and symbols…'}
-        </Text>
+        <Input
+          value={filters.query}
+          onValueChange={controls.setQuery}
+          placeholder="Search files and symbols..."
+          height={48}
+          flexShrink={0}
+          paddingX={12}
+          borderRadius={6}
+          fontSize={16}
+          backgroundColor="#070a12"
+          color="#f4f6ff"
+          caretColor="#f4f6ff"
+          placeholderStyle={{ color: '#7883a8' }}
+        />
 
-        {keyboardRows.map((row, rowIndex) =>
-          [...row].map((key, keyIndex) => (
-            <group
-              key={key}
-              position={[
-                -1.215 + keyIndex * keyPitch,
-                1.38 - rowIndex * 0.28,
-                0,
-              ]}
-            >
-              <EditorButton
-                label={key}
-                width={0.24}
-                fontSize={0.09}
-                onPress={() => type(key)}
-              />
-            </group>
-          )),
-        )}
-        <group position={[-0.94, 0.26, 0]}>
-          <EditorButton label="Space" width={0.8} onPress={() => type(' ')} />
-        </group>
-        <group position={[0, 0.26, 0]}>
-          <EditorButton
+        <Container flexDirection="column" gap={4}>
+          {keyboardRows.map((row) => (
+            <Container key={row} flexDirection="row" gap={6}>
+              {[...row].map((key) => (
+                <VrButton
+                  key={key}
+                  label={key}
+                  width={48}
+                  fontSize={18}
+                  onPress={() => type(key)}
+                />
+              ))}
+            </Container>
+          ))}
+        </Container>
+        <Container flexDirection="row" gap={28}>
+          <VrButton label="Space" width={160} onPress={() => type(' ')} />
+          <VrButton
             label="Delete"
-            width={0.8}
+            width={160}
             disabled={!filters.query}
             onPress={() =>
               controls.setQuery(VrFilterPanelLogic.backspace(filters.query))
             }
           />
-        </group>
-        <group position={[0.94, 0.26, 0]}>
-          <EditorButton
+          <VrButton
             label="Clear"
-            width={0.8}
+            width={160}
             disabled={!filters.query}
             onPress={() => controls.setQuery('')}
           />
-        </group>
+        </Container>
 
-        {controls.results.slice(0, resultRows).map((result, index) => (
-          <group key={result.node.id} position={[0, -0.04 - index * 0.25, 0]}>
+        <Container
+          flexDirection="column"
+          height={resultRows * 50 + 16}
+          flexShrink={0}
+          gap={6}
+        >
+          {controls.results.slice(0, resultRows).map((result) => (
             <VrWorkspaceRow
+              key={result.node.id}
               label={`${result.label}  ·  ${result.context}`}
               disabled={false}
               onPress={() => onSelectNode(result.node)}
             />
-          </group>
-        ))}
-        {filters.query && controls.results.length === 0 && (
-          <Text
-            position={[-1.35, -0.04, 0]}
-            anchorX="left"
-            fontSize={0.064}
-            color="#9aaed0"
-          >
-            No matches
-          </Text>
-        )}
-        {hiddenResults > 0 && (
-          <Text
-            position={[1.35, -0.98, 0]}
-            anchorX="right"
-            fontSize={0.055}
-            color="#9aaed0"
-          >
-            {`+${hiddenResults} more, keep typing to narrow`}
-          </Text>
-        )}
+          ))}
+          {filters.query && controls.results.length === 0 && (
+            <Text fontSize={13} color="#9aaed0">
+              No matches
+            </Text>
+          )}
+          {hiddenResults > 0 && (
+            <Text width="100%" textAlign="right" fontSize={11} color="#9aaed0">
+              {`+${hiddenResults} more, keep typing to narrow`}
+            </Text>
+          )}
+        </Container>
 
-        <group position={[-0.925, -1.2, 0]}>
-          <EditorButton
+        <Container flexDirection="row" gap={10}>
+          <VrButton
             label={filters.hideTests ? 'Tests: hidden' : 'Tests: shown'}
             active={filters.hideTests}
-            fontSize={0.075}
+            width={170}
+            fontSize={15}
             onPress={controls.toggleTests}
           />
-        </group>
-        <group position={[0.17, -1.2, 0]}>
-          <EditorButton
+          <VrButton
             label={`Packages: ${externalModulesLabels[filters.externalModules]}`}
             active={filters.externalModules !== 'related'}
-            width={1.25}
-            fontSize={0.075}
+            width={250}
+            fontSize={15}
             onPress={() =>
               controls.setExternalModules(
                 VrFilterPanelLogic.nextModulesMode(filters.externalModules),
               )
             }
           />
-        </group>
-        <group position={[1.075, -1.2, 0]}>
-          <EditorButton
+          <VrButton
             label="Reset"
-            width={0.55}
-            fontSize={0.075}
+            width={100}
+            fontSize={15}
             disabled={controls.activeCount === 0}
             onPress={controls.reset}
           />
-        </group>
-
-        <group position={[-0.65, -1.5, 0]}>
-          <EditorButton
+        </Container>
+        <Container flexDirection="row" gap={20}>
+          <VrButton
             label={`Group by: ${groupModeLabels[filters.groupBy]}`}
             active={filters.groupBy !== 'connectivity'}
-            width={1.4}
-            fontSize={0.075}
+            width={280}
+            fontSize={15}
             onPress={() =>
               controls.setGroupBy(
                 VrFilterPanelLogic.nextGroupMode(filters.groupBy),
               )
             }
           />
-        </group>
-        <group position={[0.7, -1.5, 0]}>
-          <EditorButton
+          <VrButton
             label={filters.showGroups ? 'Names: shown' : 'Names: hidden'}
             active={!filters.showGroups}
-            width={1.2}
-            fontSize={0.075}
+            width={240}
+            fontSize={15}
             disabled={filters.groupBy === 'none'}
             onPress={controls.toggleShowGroups}
           />
-        </group>
+        </Container>
 
-        {extensions.rows.map(({ extension, count }, index) => {
-          const hidden = filters.hiddenExtensions.includes(extension)
-          return (
-            <group
+        <Container flexDirection="row" flexWrap="wrap" gap={14}>
+          {extensions.rows.map(({ extension, count }) => (
+            <VrButton
               key={extension}
-              position={[
-                -1.035 + (index % 4) * 0.69,
-                -1.8 - Math.floor(index / 4) * 0.3,
-                0,
-              ]}
-            >
-              <EditorButton
-                label={`${GraphFilterLogic.extensionLabel(extension)} ${count}`}
-                active={!hidden}
-                width={0.62}
-                fontSize={0.07}
-                onPress={() => controls.toggleExtension(extension)}
-              />
-            </group>
-          )
-        })}
+              label={`${GraphFilterLogic.extensionLabel(extension)} ${count}`}
+              active={!filters.hiddenExtensions.includes(extension)}
+              width={124}
+              fontSize={14}
+              onPress={() => controls.toggleExtension(extension)}
+            />
+          ))}
+        </Container>
         {extensions.count > 1 && (
-          <>
-            <group position={[-0.94, -2.42, 0]}>
-              <EditorButton
-                label="Previous"
-                width={0.6}
-                fontSize={0.07}
-                disabled={extensions.index === 0}
-                onPress={() => setExtensionPage(extensions.index - 1)}
-              />
-            </group>
-            <Text position={[0, -2.42, 0]} fontSize={0.065}>
+          <Container
+            flexDirection="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <VrButton
+              label="Previous"
+              width={120}
+              fontSize={14}
+              disabled={extensions.index === 0}
+              onPress={() => setExtensionPage(extensions.index - 1)}
+            />
+            <Text fontSize={13}>
               {`Types ${extensions.index + 1} / ${extensions.count}`}
             </Text>
-            <group position={[0.94, -2.42, 0]}>
-              <EditorButton
-                label="Next"
-                width={0.6}
-                fontSize={0.07}
-                disabled={extensions.index + 1 >= extensions.count}
-                onPress={() => setExtensionPage(extensions.index + 1)}
-              />
-            </group>
-          </>
+            <VrButton
+              label="Next"
+              width={120}
+              fontSize={14}
+              disabled={extensions.index + 1 >= extensions.count}
+              onPress={() => setExtensionPage(extensions.index + 1)}
+            />
+          </Container>
         )}
-      </group>
+      </VrPanel>
     </group>
   )
 }

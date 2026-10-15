@@ -11,6 +11,7 @@ import { WorkspaceScene } from '@/scene/WorkspaceScene'
 import { WorkspaceTree } from '@/workspace/WorkspaceTree'
 import { useWorkspaceBrowser } from '@/workspace/WorkspaceBrowser/hooks/useWorkspaceBrowser'
 import { Canvas } from '@react-three/fiber'
+import { canvasInputProps } from '@react-three/uikit'
 import { createXRStore, XR } from '@react-three/xr'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -162,7 +163,11 @@ export const App = () => {
       onContextMenu={(event) => event.preventDefault()}
     >
       <div className={styles.canvas}>
-        <Canvas camera={{ position: [0, 0.65, 10.5], fov: 52 }} dpr={[1, 1.6]}>
+        <Canvas
+          camera={{ position: [0, 0.65, 10.5], fov: 52 }}
+          dpr={[1, 1.6]}
+          {...canvasInputProps}
+        >
           <XR store={xrStore}>
             <WorkspaceScene
               key={app.workspace?.root}

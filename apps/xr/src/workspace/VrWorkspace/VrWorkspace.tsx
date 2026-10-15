@@ -1,12 +1,15 @@
-import { RoundedBox, Text } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
+import { Container, Text } from '@react-three/uikit'
 import {
   useXRControllerButtonEvent,
   useXRInputSourceState,
 } from '@react-three/xr'
 import { useState } from 'react'
 import { Quaternion, Vector3 } from 'three'
-import { EditorButton } from '@/editor/EditorButton/EditorButton'
+import { VrButton } from '@/ui/VrButton/VrButton'
+import { VrLine } from '@/ui/VrLine/VrLine'
+import { VrPanel } from '@/ui/VrPanel/VrPanel'
+import { VrTextLogic } from '@/ui/VrText.logic'
 import type { WorkspaceBrowserControls } from '@/workspace/WorkspaceBrowser/hooks/useWorkspaceBrowser'
 import { WorkspaceBrowserLogic } from '@/workspace/WorkspaceBrowser/WorkspaceBrowser.logic'
 import { VrWorkspaceRow } from '@/workspace/VrWorkspaceRow/VrWorkspaceRow'
@@ -91,78 +94,64 @@ export const VrWorkspace = ({ controls }: VrWorkspaceProps) => {
         rotation={[0, placement.rotation, 0]}
         scale={0.55}
       >
-        <RoundedBox args={[3, 3.65, 0.08]} radius={0.07} smoothness={4}>
-          <meshBasicMaterial color="#0c1425" />
-        </RoundedBox>
-        <group position={[0, 0, 0.06]}>
-          <Text
-            position={[-1.35, 1.58, 0]}
-            anchorX="left"
-            fontSize={0.105}
-            maxWidth={2.7}
-            whiteSpace="nowrap"
-            clipRect={[-0.01, -0.1, 2.7, 0.1]}
-          >
-            {controls.workspace?.name ?? 'Workspace'} · {controls.fileCount} TS
-          </Text>
-          <group position={[-0.94, 1.24, 0]}>
-            <EditorButton
+        <VrPanel width={600} height={730}>
+          <VrLine
+            text={`${controls.workspace?.name ?? 'Workspace'} · ${controls.fileCount} TS`}
+            fontSize={21}
+          />
+          <Container flexDirection="row" gap={18}>
+            <VrButton
               label="Choose"
+              width={170}
               disabled={controls.disabled}
               onPress={() => {
                 setRecent(false)
                 controls.browse(controls.workspace?.root ?? '')
               }}
             />
-          </group>
-          <group position={[0, 1.24, 0]}>
-            <EditorButton
+            <VrButton
               label="Files"
+              width={170}
               onPress={() => {
                 setRecent(false)
                 controls.closeBrowser()
               }}
             />
-          </group>
-          <group position={[0.94, 1.24, 0]}>
-            <EditorButton
+            <VrButton
               label="Recent"
+              width={170}
               disabled={controls.disabled}
               onPress={() => {
                 setRecent(true)
                 controls.setPage(0)
               }}
             />
-          </group>
-          <Text
-            position={[-1.35, 0.97, 0]}
-            fontSize={0.058}
-            anchorX="left"
-            maxWidth={2.7}
-            clipRect={[-0.01, -0.11, 2.7, 0.1]}
-          >
-            {controls.pendingPath ??
+          </Container>
+          <VrLine
+            text={
+              controls.pendingPath ??
               (recent
                 ? 'Recent projects on server computer'
                 : controls.browsing
                   ? (controls.listing?.path ?? 'Folders on server computer')
-                  : (controls.workspace?.root ?? 'Connecting…'))}
-          </Text>
+                  : (controls.workspace?.root ?? 'Connecting…'))
+            }
+            fontSize={12}
+          />
           {controls.browsing && !recent && (
-            <group position={[-0.94, 0.68, 0]}>
-              <EditorButton
-                label="Open folder"
-                disabled={controls.disabled || !controls.listing}
-                onPress={() =>
-                  controls.listing &&
-                  controls.requestOpen(controls.listing.path)
-                }
-              />
-            </group>
+            <VrButton
+              label="Open folder"
+              width={170}
+              disabled={controls.disabled || !controls.listing}
+              onPress={() =>
+                controls.listing && controls.requestOpen(controls.listing.path)
+              }
+            />
           )}
-          {page.rows.map((row, index) => (
-            <group key={row.path} position={[0, 0.36 - index * 0.25, 0]}>
+          <Container flexDirection="column" flexGrow={1} gap={6}>
+            {page.rows.map((row) => (
               <VrWorkspaceRow
+                key={row.path}
                 label={row.label}
                 selected={
                   controls.selectedPath === row.path ||
@@ -177,54 +166,55 @@ export const VrWorkspace = ({ controls }: VrWorkspaceProps) => {
                       : controls.selectRow(row.path, row.directory)
                 }
               />
-            </group>
-          ))}
-          {controls.pendingPath ? (
-            <>
-              <group position={[-0.94, -1.37, 0]}>
-                <EditorButton
+            ))}
+          </Container>
+          <Container flexDirection="row" gap={18} alignItems="center">
+            {controls.pendingPath ? (
+              <>
+                <VrButton
                   label="Keep draft & open"
+                  width={170}
+                  fontSize={15}
                   disabled={controls.disabled}
                   onPress={controls.confirmOpen}
                 />
-              </group>
-              <group position={[0, -1.37, 0]}>
-                <EditorButton label="Cancel" onPress={controls.cancelOpen} />
-              </group>
-            </>
-          ) : (
-            <>
-              <group position={[-0.94, -1.37, 0]}>
-                <EditorButton
+                <VrButton
+                  label="Cancel"
+                  width={170}
+                  onPress={controls.cancelOpen}
+                />
+              </>
+            ) : (
+              <>
+                <VrButton
                   label="Previous"
+                  width={170}
                   disabled={page.index === 0}
                   onPress={() => controls.setPage(page.index - 1)}
                 />
-              </group>
-              <Text position={[0, -1.37, 0]} fontSize={0.075}>
-                {page.index + 1} / {page.count}
-              </Text>
-              <group position={[0.94, -1.37, 0]}>
-                <EditorButton
+                <Container width={170} justifyContent="center">
+                  <Text fontSize={15}>
+                    {page.index + 1} / {page.count}
+                  </Text>
+                </Container>
+                <VrButton
                   label="Next"
+                  width={170}
                   disabled={page.index + 1 >= page.count}
                   onPress={() => controls.setPage(page.index + 1)}
                 />
-              </group>
-            </>
-          )}
+              </>
+            )}
+          </Container>
           <Text
-            position={[-1.35, -1.63, 0]}
-            fontSize={0.064}
-            anchorX="left"
-            maxWidth={2.7}
+            fontSize={13}
             color={
               controls.error || controls.pendingPath ? '#ffbd89' : '#9aaed0'
             }
           >
-            {message}
+            {VrTextLogic.ascii(message)}
           </Text>
-        </group>
+        </VrPanel>
       </group>
     )
   )

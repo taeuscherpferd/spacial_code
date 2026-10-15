@@ -1,5 +1,7 @@
-import { RoundedBox, Text } from '@react-three/drei'
+import { Container } from '@react-three/uikit'
 import type { ProcessState } from '@/connection/protocol'
+import { VrButton } from '@/ui/VrButton/VrButton'
+import { vrPixelSize } from '@/ui/VrPanel/VrPanel'
 
 interface SpatialToolbarProps {
   process: ProcessState
@@ -36,79 +38,21 @@ export const SpatialToolbar = ({
 }: SpatialToolbarProps) => {
   const running = process.status === 'running'
   return (
-    <group position={[2.4, 2.72, 0]}>
-      <SpatialButton
-        x={-2.2}
-        label="▶ RUN"
-        enabled={!running}
-        onPress={onRun}
-      />
-      <SpatialButton
-        x={-1.46}
-        label="■ STOP"
-        enabled={running}
-        onPress={onStop}
-      />
-      <SpatialButton
-        x={-0.64}
-        label="↻ RESTART"
-        enabled={running}
-        onPress={onRestart}
-      />
-      <SpatialButton x={0.28} label="SAVE" enabled={canSave} onPress={onSave} />
-      <SpatialButton
-        x={1.0}
-        label="FOCUS"
-        enabled={canFocus}
-        onPress={onFocus}
-      />
-      <SpatialButton x={1.76} label="BACK" enabled={canBack} onPress={onBack} />
-      <SpatialButton
-        x={2.46}
-        label="FOLD"
-        enabled={canCollapse}
-        onPress={onCollapse}
-      />
-      <SpatialButton
-        x={3.22}
-        label={filtersActive ? 'FILTER •' : 'FILTER'}
-        enabled
-        onPress={onFilters}
-      />
+    <group position={[2.91, 2.72, 0]}>
+      <Container pixelSize={vrPixelSize} flexDirection="row" gap={12}>
+        <VrButton label="RUN" disabled={running} onPress={onRun} />
+        <VrButton label="STOP" disabled={!running} onPress={onStop} />
+        <VrButton label="RESTART" disabled={!running} onPress={onRestart} />
+        <VrButton label="SAVE" disabled={!canSave} onPress={onSave} />
+        <VrButton label="FOCUS" disabled={!canFocus} onPress={onFocus} />
+        <VrButton label="BACK" disabled={!canBack} onPress={onBack} />
+        <VrButton label="FOLD" disabled={!canCollapse} onPress={onCollapse} />
+        <VrButton
+          label={filtersActive ? 'FILTER *' : 'FILTER'}
+          active={filtersActive}
+          onPress={onFilters}
+        />
+      </Container>
     </group>
   )
 }
-
-interface SpatialButtonProps {
-  x: number
-  label: string
-  enabled: boolean
-  onPress: () => void
-}
-
-const SpatialButton = ({ x, label, enabled, onPress }: SpatialButtonProps) => (
-  <group
-    position={[x, 0, 0]}
-    onPointerDown={(event) => {
-      event.stopPropagation()
-      if (enabled) {
-        onPress()
-      }
-    }}
-  >
-    <RoundedBox args={[0.65, 0.3, 0.1]} radius={0.06} smoothness={3}>
-      <meshStandardMaterial
-        color={enabled ? '#1c294e' : '#111522'}
-        emissive={enabled ? '#27488d' : '#000000'}
-        emissiveIntensity={0.35}
-      />
-    </RoundedBox>
-    <Text
-      fontSize={0.075}
-      position={[0, 0, 0.057]}
-      color={enabled ? '#edf2ff' : '#5c6275'}
-    >
-      {label}
-    </Text>
-  </group>
-)
